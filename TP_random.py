@@ -1,21 +1,14 @@
 from mesa import Agent, Model
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
-# to collect features during the #simulation
 from mesa.space import MultiGrid
-# to generate the environment
 
-
-# for computation and visualization purpose
 import numpy as np
-import sys
 import matplotlib.pyplot as plt
 import random
 
 
 class Agent(Agent):
-    """ An agent with fixed initial wealth."""
-
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         self.infected = 0
@@ -49,13 +42,8 @@ class Agent(Agent):
         self.spread_news()
 
 
-# let's define a function which is able to count, at each step, how many agents
-# are aware of the product.
-
 def compute_informed(model):
     return sum([1 for a in model.schedule.agents if a.infected == 1])
-
-# now let's define the model
 
 
 class News_Model(Model):
@@ -65,7 +53,6 @@ class News_Model(Model):
         self.schedule = RandomActivation(self)
         self.running = True
 
-        # Create agents
         for i in range(self.num_agents):
             a = Agent(i, self)
             self.schedule.add(a)
@@ -84,7 +71,6 @@ class News_Model(Model):
         self.schedule.step()
 
 
-'''Run the model '''
 model = News_Model(N=750,
                    width=60,
                    height=60,
@@ -94,7 +80,6 @@ steps = 200
 for i in range(steps):
     model.step()
 
-# let's inspect the results:
 out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out = out.to_numpy()
 print(new_out)
