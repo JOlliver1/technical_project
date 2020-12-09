@@ -17,6 +17,7 @@ transport = [float(i) for i in google_data[1:, 3]]
 workplaces = [float(i) for i in google_data[1:, 4]]
 resident = [float(i) for i in google_data[1:, 5]]
 
+plt.figure(figsize=(10, 5))
 plt.plot(np.arange(15, 304), resident)
 plt.grid()
 plt.show()

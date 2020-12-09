@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
+from import_apple_data import average, new_average
+
 
 class Agent(Agent):
     def __init__(self, unique_id, model):
@@ -19,15 +21,8 @@ class Agent(Agent):
         neighbors = self.model.grid.get_neighbors(self.pos, moore=True, include_center=True)
         neig_agents = [a for n in neighbors for a in self.model.grid.get_cell_list_contents(n.pos)]
         for a in neig_agents:
-            if i < 80:
-                if random.random() < 0.03:
-                    a.infected = 1
-            if i > 160:
-                if random.random() < 0.05:
-                    a.infected = 1
-            else:
-                if random.random() < 0.005:
-                    a.infected = 1
+            if random.random() < average[day]/3000:
+                a.infected = 1
 
     def move(self):
         possible_steps = self.model.grid.get_neighborhood(
@@ -71,29 +66,21 @@ class News_Model(Model):
         self.schedule.step()
 
 
-model = News_Model(N=750,
-                   width=60,
-                   height=60,
+model = News_Model(N=1000,
+                   width=70,
+                   height=70,
                    initial=1)
 
-steps = 200
-for i in range(steps):
+steps = 322
+for day in range(steps):
     model.step()
 
 out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out = out.to_numpy()
-print(new_out)
-print(np.diff(new_out.T))
 
-plt.subplot(211)
-plt.plot(np.arange(0, steps), new_out, 'o')
+plt.figure(figsize=(10, 5))
+plt.plot(np.arange(0, steps), new_out, color='blue')
 plt.xlabel('Steps')
 plt.ylabel('No. of People')
 plt.grid()
-plt.subplot(212)
-plt.plot(np.arange(0, steps-1), np.diff(new_out.T).T, 'x')
-plt.xlabel('Steps')
-plt.ylabel('No. of New People')
-plt.grid()
 plt.show()
-
