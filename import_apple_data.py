@@ -16,20 +16,21 @@ driving = [float(i) for i in apple_data[1, 6:]]
 transit = [float(i) for i in apple_data[2, 6:]]
 walking = [float(i) for i in apple_data[3, 6:]]
 
-average = np.mean([driving, walking, transit], axis=0)
+average = np.mean([driving, walking, transit], axis=0)[33:]
 new_average = np.concatenate((average[:28], average[:28], average[:-56]), axis=None)
+newer_average = np.concatenate((average[28:], average[-28:]), axis=None)
 
 """
 plt.figure(figsize=(10, 5))
-plt.plot(np.arange(12, 334), 100*np.ones(322), color='black', label='Baseline')
+plt.plot(np.arange(0, 289), 100*np.ones(289), color='black', label='Baseline')
 #plt.plot(np.arange(12, 334), driving, label='Driving')
 #plt.plot(np.arange(12, 334), transit, label='Transit')
 #plt.plot(np.arange(12, 334), walking, label='Walking')
-plt.plot(np.arange(12, 334), average, label='Average')
-plt.plot(np.arange(12, 334), new_average, label='New Average')
+plt.plot(np.arange(0, 289), new_average, label='Behind', color='red')
+plt.plot(np.arange(0, 289), newer_average, label='Ahead', color='green')
+plt.plot(np.arange(0, 289), average, label='Real', color='blue')
 plt.ylabel('%')
 plt.xlabel('Days')
-plt.title('Apple Mobility Trends - UK')
 plt.grid()
 plt.legend()
 plt.show()  # """
