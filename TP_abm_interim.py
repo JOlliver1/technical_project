@@ -19,6 +19,7 @@ class Agent(Agent):
     def spread_disease(self):
         if self.infected == 0:
             return
+        print(self.pos)
         neighbors = self.model.grid.get_neighbors(self.pos, moore=True, include_center=True)
         neig_agents = [a for n in neighbors for a in self.model.grid.get_cell_list_contents(n.pos)]
         for a in neig_agents:
