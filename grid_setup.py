@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 population = 2000
-city_ratio = 0.83  # for UK
+city_ratio = 0.50  # for UK
 city_to_country = 0.14  # for UK
 grid_width = 200
 grid_height = 200
@@ -36,14 +36,14 @@ def counter(array):
 
 
 centers = np.zeros((1, 2))
-centers[0, :] = random.randrange(20, 180), random.randrange(20, 180)
+centers[0, :] = random.randrange(20, grid_width-20), random.randrange(20, grid_height-20)
 x = np.zeros((1, round(int(city_to_country*population))))
 y = np.zeros((1, round(int(city_to_country*population))))
 x[0, :] = np.around(np.random.normal(centers[0, 0], 5, round(int(city_to_country*population))))
 y[0, :] = np.around(np.random.normal(centers[0, 1], 5, round(int(city_to_country*population))))
 
 count = 0
-while counter(x) < 1000:
+while counter(x) < population - ((1-city_ratio)*population):
     runner = True
     while runner:
         new_center = (random.randrange(20, 180), random.randrange(20, 180))
@@ -51,8 +51,8 @@ while counter(x) < 1000:
             centers = np.vstack((centers, new_center))
             runner = False
 
-    new_x = np.around(np.random.normal(centers[count, 0], 5, round(int(city_to_country*population)/(count+2))))
-    new_y = np.around(np.random.normal(centers[count, 1], 5, round(int(city_to_country*population)/(count+2))))
+    new_x = np.around(np.random.normal(centers[count, 0], 5, round(int(city_to_country*population)/((count+2)**1.07))))
+    new_y = np.around(np.random.normal(centers[count, 1], 5, round(int(city_to_country*population)/((count+2)**1.07))))
     while len(new_x) < round(int(city_to_country*population)):
         new_x = np.append(new_x, -1)
         new_y = np.append(new_y, -1)
@@ -62,12 +62,14 @@ while counter(x) < 1000:
     count += 1
 
 
-x5 = np.around(np.random.uniform(0, grid_width, int((1-city_ratio)*2000)))
-y5 = np.around(np.random.uniform(0, grid_height, int((1-city_ratio)*2000)))
+x5 = np.around(np.random.uniform(0, grid_width, int((1-city_ratio)*population)))
+y5 = np.around(np.random.uniform(0, grid_height, int((1-city_ratio)*population)))
 
 all_x = np.concatenate((x.flatten(), x5))
 all_y = np.concatenate((y.flatten(), y5))
-all_xy = np.vstack((all_x, all_y))
+new_all_x = np.delete(all_x, np.where(all_x == -1))
+new_all_y = np.delete(all_y, np.where(all_y == -1))
+all_xy = np.vstack((new_all_x, new_all_y))
 agent_counts = np.zeros((grid_height+1, grid_width+1))
 
 for i in range(np.shape(all_xy)[1]):
