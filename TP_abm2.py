@@ -35,9 +35,13 @@ def counter(array):
 
     count = 0
 
-    for i in range(np.shape(array)[0]):
-        for j in range(len(array[i, :])):
-            if array[i, j] != -1:
+    if np.shape(array)[0] < 2:
+        for j in range(np.shape(array)[1]):
+            if j != -1:
+                count += 1
+    else:
+        for j in range(np.shape(array)[1]):
+            if array[-1, j] != -1:
                 count += 1
 
     return count
@@ -75,32 +79,32 @@ def compute_informed(model):
 
 
 class DiseaseModel(Model):
-    def __init__(self, city_ratio, city_to_country):
+    def __init__(self, city_to_country):
         self.num_agents = 2000
         self.grid = MultiGrid(200, 200, True)
         self.schedule = RandomActivation(self)
         self.running = True
 
         centers = np.zeros((1, 2))
-        centers[0, :] = random.randrange(20, self.grid.width - 20), random.randrange(20, self.grid.height - 20)
+        centers[0, :] = random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10)
         x = np.zeros((1, round(int(city_to_country * self.num_agents))))
         y = np.zeros((1, round(int(city_to_country * self.num_agents))))
-        x[0, :] = np.around(np.random.normal(centers[0, 0], 5, round(int(city_to_country * self.num_agents))))
-        y[0, :] = np.around(np.random.normal(centers[0, 1], 5, round(int(city_to_country * self.num_agents))))
+        x[0, :] = np.around(np.random.normal(centers[0, 0], 3, round(int(city_to_country * self.num_agents))))
+        y[0, :] = np.around(np.random.normal(centers[0, 1], 3, round(int(city_to_country * self.num_agents))))
 
         count = 0
-        while counter(x) < self.num_agents - ((1-city_ratio)*self.num_agents):
+        while counter(x) > 1:
             runner = True
             while runner:
-                new_center = (random.randrange(20, 180), random.randrange(20, 180))
-                if dist_check(new_center, centers):
+                new_center = (random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10))
+                if dist_check(new_center, centers) & count < 20:
                     centers = np.vstack((centers, new_center))
                     runner = False
 
-            new_x = np.around(np.random.normal(centers[count, 0], 5,
-                                               round(int(city_to_country * self.num_agents) / ((count + 2) ** 1.07))))
-            new_y = np.around(np.random.normal(centers[count, 1], 5,
-                                               round(int(city_to_country * self.num_agents) / ((count + 2) ** 1.07))))
+            new_x = np.around(np.random.normal(centers[count, 0], 3,
+                                               round(int(city_to_country * self.num_agents) / (count + 2))))
+            new_y = np.around(np.random.normal(centers[count, 1], 3,
+                                               round(int(city_to_country * self.num_agents) / (count + 2))))
             while len(new_x) < round(int(city_to_country * self.num_agents)):
                 new_x = np.append(new_x, -1)
                 new_y = np.append(new_y, -1)
@@ -109,18 +113,19 @@ class DiseaseModel(Model):
             y = np.vstack((y, new_y))
             count += 1
 
-        x_countryside = np.around(np.random.uniform(0, self.grid.width-1, int((1 - city_ratio) * self.num_agents)))
-        y_countryside = np.around(np.random.uniform(0, self.grid.height-1, int((1 - city_ratio) * self.num_agents)))
+        new_x = np.delete(x.flatten(), np.where(x.flatten() == -1))
+        new_y = np.delete(y.flatten(), np.where(y.flatten() == -1))
 
-        all_x = np.concatenate((x.flatten(), x_countryside))
-        all_y = np.concatenate((y.flatten(), y_countryside))
-        new_all_x = np.delete(all_x, np.where(all_x == -1))
-        new_all_y = np.delete(all_y, np.where(all_y == -1))
+        x_countryside = np.around(np.random.uniform(0, self.grid.width-1, int(self.num_agents - len(new_x))))
+        y_countryside = np.around(np.random.uniform(0, self.grid.height-1, int(self.num_agents - len(new_y))))
+
+        all_x = np.concatenate((new_x, x_countryside))
+        all_y = np.concatenate((new_y, y_countryside))
 
         for i in range(self.num_agents):
             a = Agent(i, self)
             self.schedule.add(a)
-            self.grid.place_agent(a, (int(new_all_x[i]), int(new_all_y[i])))
+            self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
 
             if i < 1:
                 a.infected = 1
@@ -134,7 +139,7 @@ class DiseaseModel(Model):
         self.schedule.step()
 
 
-model = DiseaseModel(city_ratio=0.5, city_to_country=0.14)
+model = DiseaseModel(city_to_country=0.14)
 
 
 def colour_plotter(model):
@@ -159,7 +164,7 @@ steps = 289
 for day in range(steps):
     model.step()
 
-#colour_plotter(model)
+colour_plotter(model)
 
 out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out = out.to_numpy()
