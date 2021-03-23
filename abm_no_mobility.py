@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import random
 import math
 
-from import_apple_data import average
-
 
 def find_dist(pos1, pos2):
 
@@ -64,12 +62,9 @@ class Agent(Agent):
                     a.infected = 1
 
     def move(self):
-        if random.uniform(0, 1) < average[day]/100:
-            possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
-            new_position = self.random.choice(possible_steps)
-            self.model.grid.move_agent(self, new_position)
-        else:
-            return
+        possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
+        new_position = self.random.choice(possible_steps)
+        self.model.grid.move_agent(self, new_position)
 
     def step(self):
         self.move()

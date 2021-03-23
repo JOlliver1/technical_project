@@ -1,4 +1,4 @@
-import random
+import random_file
 import math
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,23 +17,23 @@ def find_dist(pos1, pos2):
     return distance
 
 
-center1 = np.array((random.randrange(20, 180), random.randrange(20, 180)))
+center1 = np.array((random_file.randrange(20, 180), random_file.randrange(20, 180)))
 # center2 = (random.randrange(40, 160), random.randrange(40, 160))
 # center3 = (random.randrange(40, 160), random.randrange(40, 160))
 # center4 = (random.randrange(40, 160), random.randrange(40, 160))
 
 while True:
-    center2 = (random.randrange(20, 180), random.randrange(20, 180))
+    center2 = (random_file.randrange(20, 180), random_file.randrange(20, 180))
     if find_dist(center1, center2) > 30:
         break
 
 while True:
-    center3 = (random.randrange(20, 180), random.randrange(20, 180))
+    center3 = (random_file.randrange(20, 180), random_file.randrange(20, 180))
     if find_dist(center1, center3) > 30 and find_dist(center2, center3) > 30:
         break
 
 while True:
-    center4 = (random.randrange(20, 180), random.randrange(20, 180))
+    center4 = (random_file.randrange(20, 180), random_file.randrange(20, 180))
     if find_dist(center1, center4) > 30 and find_dist(center2, center4) > 30 and find_dist(center3, center4) > 30:
         break
 

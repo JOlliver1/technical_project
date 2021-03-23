@@ -51,7 +51,7 @@ def counter1(array):
 
 
 centers = np.zeros((1, 2))
-centers[0, :] = random.randrange(10, grid_width-10), random.randrange(10, grid_height-10)
+centers[0, :] = random_file.randrange(10, grid_width - 10), random_file.randrange(10, grid_height - 10)
 x = np.zeros((1, round(int(city_to_country*population))))
 y = np.zeros((1, round(int(city_to_country*population))))
 x[0, :] = np.around(np.random.normal(centers[0, 0], 3, round(int(city_to_country*population))))
@@ -64,7 +64,7 @@ counter(x)
 while counter(x) > 1:
     runner = True
     while runner:
-        new_center = (random.randrange(10, grid_width-10), random.randrange(10, grid_height-10))
+        new_center = (random_file.randrange(10, grid_width - 10), random_file.randrange(10, grid_height - 10))
         if dist_check(new_center, centers) & count < 20:
             centers = np.vstack((centers, new_center))
             runner = False
