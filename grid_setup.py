@@ -51,7 +51,7 @@ def counter1(array):
 
 
 centers = np.zeros((1, 2))
-centers[0, :] = random_file.randrange(10, grid_width - 10), random_file.randrange(10, grid_height - 10)
+centers[0, :] = random.randrange(10, grid_width - 10), random.randrange(10, grid_height - 10)
 x = np.zeros((1, round(int(city_to_country*population))))
 y = np.zeros((1, round(int(city_to_country*population))))
 x[0, :] = np.around(np.random.normal(centers[0, 0], 3, round(int(city_to_country*population))))
@@ -64,7 +64,7 @@ counter(x)
 while counter(x) > 1:
     runner = True
     while runner:
-        new_center = (random_file.randrange(10, grid_width - 10), random_file.randrange(10, grid_height - 10))
+        new_center = (random.randrange(10, grid_width - 10), random.randrange(10, grid_height - 10))
         if dist_check(new_center, centers) & count < 20:
             centers = np.vstack((centers, new_center))
             runner = False
@@ -96,11 +96,20 @@ for i in range(np.shape(all_xy)[1]):
     if 0 < int(all_xy[0, i]) & int(all_xy[1, i]) < 200:
         agent_counts[int(all_xy[0, i]), 200-int(all_xy[1, i])] += 1
 
+infected_index = [1500, 1600]
+all_x_infected = [0] * len(infected_index)
+all_y_infected = [0] * len(infected_index)
+infected_count = 0
+
+for i in infected_index:
+    all_x_infected[infected_count] = all_x[i]
+    all_y_infected[infected_count] = all_y[i]
+    infected_count += 1
+
 plt.figure(figsize=(12, 6))
 plt.subplot(1, 2, 1)
-plt.scatter(all_x, all_y)
-#plt.scatter(x5, y5)
-#plt.scatter(x, y)
+plt.scatter(all_x, all_y, marker='s', c='blue', s=2)
+plt.scatter(all_x_infected, all_y_infected, marker='s', c='red', s=2)
 
 plt.subplot(1, 2, 2)
 plt.imshow(agent_counts.T, interpolation='nearest', cmap='hot')

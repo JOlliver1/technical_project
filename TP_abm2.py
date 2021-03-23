@@ -129,7 +129,7 @@ class DiseaseModel(Model):
             self.schedule.add(a)
             self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
 
-            if i < 1:
+            if i == 1500:
                 a.infected = 1
 
         self.datacollector = DataCollector(
@@ -169,6 +169,8 @@ for day in range(steps):
 colour_plotter(model)
 
 out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+print(model.datacollector.get_agent_vars_dataframe().groupby('Step'))
+#print(out)
 new_out = out.to_numpy()
 
 plt.figure(figsize=(10, 5))

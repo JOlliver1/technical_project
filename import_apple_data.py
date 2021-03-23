@@ -17,6 +17,7 @@ transit = [float(i) for i in apple_data[2, 6:]]
 walking = [float(i) for i in apple_data[3, 6:]]
 
 average = np.mean([driving, walking, transit], axis=0)[33:]
+#print(average)
 new_average = np.concatenate((average[:28], average[:28], average[:-56]), axis=None)
 newer_average = np.concatenate((average[28:], average[-28:]), axis=None)
 
