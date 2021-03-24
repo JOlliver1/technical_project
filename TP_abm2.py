@@ -67,6 +67,53 @@ def make_colormap(seq):
     return mcolors.LinearSegmentedColormap('CustomMap', cdict)
 
 
+def colour_plotter(model):
+    c = mcolors.ColorConverter().to_rgb
+    rvb = make_colormap([c('black'), c('red'), 0.05, c('red'), c('yellow'), 0.5, c('yellow'), c('white')
+                        , 0.9, c('white')])
+
+    agent_counts = np.zeros((model.grid.width, model.grid.height))
+
+    for cell in model.grid.coord_iter():
+        cell_content, x, y = cell
+        agent_count = len(cell_content)
+        agent_counts[x][y] = agent_count
+
+    plt.figure(figsize=(6, 6))
+    plt.imshow(agent_counts.T, interpolation='nearest', cmap=rvb)
+    plt.colorbar()
+    plt.show()
+
+
+def infected_plotter(model, day):
+
+    no_infected = sum([1 for a in model.schedule.agents if a.infected == 1])
+    infected_index_x = np.zeros(no_infected)
+    index_x = np.zeros(model.num_agents)
+    infected_index_y = np.zeros(no_infected)
+    index_y = np.zeros(model.num_agents)
+    count = 0
+    count1 = 0
+
+    for cell in model.grid.coord_iter():
+        cell_content, x, y = cell
+        for a in cell_content:
+            index_x[count1] = x
+            index_y[count1] = model.grid.height - y
+            count1 += 1
+            if a.infected == 1:
+                infected_index_x[count] = x
+                infected_index_y[count] = model.grid.height - y
+                count += 1
+
+    plt.rcParams['axes.facecolor'] = 'black'
+    plt.figure(figsize=(6, 6))
+    plt.scatter(index_x, index_y, marker='s', c='blue', s=1)
+    plt.scatter(infected_index_x, infected_index_y, marker='s', c='red', s=1)
+    plt.title('Step = ' + str(day) + '     No. Infected = ' + str(no_infected) + '/' + str(model.num_agents))
+    plt.show()
+
+
 class Agent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -102,8 +149,8 @@ def compute_informed(model):
 
 class DiseaseModel(Model):
     def __init__(self, city_to_country):
-        self.num_agents = 2000
-        self.grid = MultiGrid(200, 200, True)
+        self.num_agents = 10000
+        self.grid = MultiGrid(1000, 1000, True)
         self.schedule = RandomActivation(self)
         self.running = True
 
@@ -163,52 +210,6 @@ class DiseaseModel(Model):
 
 model = DiseaseModel(city_to_country=0.14)
 
-
-def colour_plotter(model):
-    c = mcolors.ColorConverter().to_rgb
-    rvb = make_colormap([c('black'), c('red'), 0.05, c('red'), c('yellow'), 0.5, c('yellow'), c('white')
-                        , 0.9, c('white')])
-
-    agent_counts = np.zeros((model.grid.width, model.grid.height))
-
-    for cell in model.grid.coord_iter():
-        cell_content, x, y = cell
-        agent_count = len(cell_content)
-        agent_counts[x][y] = agent_count
-
-    plt.imshow(agent_counts, interpolation='nearest', cmap=rvb)
-    plt.colorbar()
-    plt.show()
-
-
-def infected_plotter(model, day):
-
-    no_infected = sum([1 for a in model.schedule.agents if a.infected == 1])
-    infected_index_x = np.zeros(no_infected)
-    index_x = np.zeros(model.num_agents)
-    infected_index_y = np.zeros(no_infected)
-    index_y = np.zeros(model.num_agents)
-    count = 0
-    count1 = 0
-
-    for cell in model.grid.coord_iter():
-        cell_content, x, y = cell
-        for a in cell_content:
-            index_x[count1] = x
-            index_y[count1] = y
-            count1 += 1
-            if a.infected == 1:
-                infected_index_x[count] = x
-                infected_index_y[count] = y
-                count += 1
-
-    plt.figure(figsize=(6, 6))
-    plt.scatter(index_x, index_y, marker='s', c='blue', s=2)
-    plt.scatter(infected_index_x, infected_index_y, marker='s', c='red', s=2)
-    plt.title('Day = ' + str(day) + '     No. Infected = ' + str(no_infected))
-    plt.show()
-
-
 colour_plotter(model)
 
 #recovery_count = np.zeros(1000)
@@ -228,9 +229,10 @@ out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 #print(out)
 new_out = out.to_numpy()
 
-plt.figure(figsize=(10, 5))
+plt.rcParams['axes.facecolor'] = 'white'
+plt.figure(figsize=(12, 6))
 plt.plot(np.arange(0, steps), new_out, color='blue', label='Real')
-plt.xlabel('Days')
+plt.xlabel('Steps')
 plt.ylabel('No. of People Infected')
 plt.legend()
 plt.grid()
