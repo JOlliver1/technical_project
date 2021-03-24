@@ -102,8 +102,8 @@ def compute_informed(model):
 
 class DiseaseModel(Model):
     def __init__(self, city_to_country):
-        self.num_agents = 10000
-        self.grid = MultiGrid(500, 500, True)
+        self.num_agents = 2000
+        self.grid = MultiGrid(200, 200, True)
         self.schedule = RandomActivation(self)
         self.running = True
 
@@ -149,7 +149,7 @@ class DiseaseModel(Model):
             self.schedule.add(a)
             self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
 
-            if i == 1500:
+            if i == 1:
                 a.infected = 1
 
         self.datacollector = DataCollector(
@@ -181,12 +181,44 @@ def colour_plotter(model):
     plt.show()
 
 
+def infected_plotter(model, day):
+
+    no_infected = sum([1 for a in model.schedule.agents if a.infected == 1])
+    infected_index_x = np.zeros(no_infected)
+    index_x = np.zeros(model.num_agents)
+    infected_index_y = np.zeros(no_infected)
+    index_y = np.zeros(model.num_agents)
+    count = 0
+    count1 = 0
+
+    for cell in model.grid.coord_iter():
+        cell_content, x, y = cell
+        for a in cell_content:
+            index_x[count1] = x
+            index_y[count1] = y
+            count1 += 1
+            if a.infected == 1:
+                infected_index_x[count] = x
+                infected_index_y[count] = y
+                count += 1
+
+    plt.figure(figsize=(6, 6))
+    plt.scatter(index_x, index_y, marker='s', c='blue', s=2)
+    plt.scatter(infected_index_x, infected_index_y, marker='s', c='red', s=2)
+    plt.title('Day = ' + str(day) + '     No. Infected = ' + str(no_infected))
+    plt.show()
+
+
 colour_plotter(model)
 
 #recovery_count = np.zeros(1000)
 
-steps = 200
+steps = 289
 for day in range(steps):
+    if day % 10 == 0:
+        infected_plotter(model, day)
+    elif day < 10:
+        infected_plotter(model, day)
     model.step()
 
 colour_plotter(model)
