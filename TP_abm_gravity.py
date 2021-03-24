@@ -7,8 +7,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import math
+import datetime
 
 from import_apple_data import average
+
+begin_time = datetime.datetime.now()
 
 
 def find_dist(pos1, pos2):
@@ -96,7 +99,7 @@ class DiseaseModel(Model):
         y[0, :] = np.around(np.random.normal(centers[0, 1], 3, round(int(city_to_country * self.num_agents))))
 
         count = 0
-        while counter(x) > 1:
+        while counter(x) > 2:
             runner = True
             while runner:
                 new_center = (random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10))
@@ -161,24 +164,25 @@ def colour_plotter(model):
     plt.show()
 
 
-colour_plotter(model)
+#colour_plotter(model)
 
 #recovery_count = np.zeros(1000)
 
-steps = 289
+steps = 200
 for day in range(steps):
     model.step()
 
-colour_plotter(model)
+#colour_plotter(model)
 
 out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out = out.to_numpy()
 
-plt.figure(figsize=(10, 5))
+"""plt.figure(figsize=(10, 5))
 plt.plot(np.arange(0, steps), new_out, color='blue', label='Real')
 plt.xlabel('Days')
 plt.ylabel('No. of People Infected')
 plt.legend()
 plt.grid()
-plt.show()
+plt.show()"""
 
+print(datetime.datetime.now() - begin_time)

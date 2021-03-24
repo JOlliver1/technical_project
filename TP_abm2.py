@@ -5,10 +5,14 @@ from mesa.space import MultiGrid
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import random
 import math
+import datetime
 
 from import_apple_data import average
+
+begin_time = datetime.datetime.now()
 
 
 def find_dist(pos1, pos2):
@@ -47,6 +51,22 @@ def counter(array):
     return count
 
 
+def make_colormap(seq):
+
+    seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
+    cdict = {'red': [], 'green': [], 'blue': []}
+
+    for i, item in enumerate(seq):
+        if isinstance(item, float):
+            r1, g1, b1 = seq[i - 1]
+            r2, g2, b2 = seq[i + 1]
+            cdict['red'].append([item, r1, r2])
+            cdict['green'].append([item, g1, g2])
+            cdict['blue'].append([item, b1, b2])
+
+    return mcolors.LinearSegmentedColormap('CustomMap', cdict)
+
+
 class Agent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -82,8 +102,8 @@ def compute_informed(model):
 
 class DiseaseModel(Model):
     def __init__(self, city_to_country):
-        self.num_agents = 2000
-        self.grid = MultiGrid(200, 200, True)
+        self.num_agents = 10000
+        self.grid = MultiGrid(500, 500, True)
         self.schedule = RandomActivation(self)
         self.running = True
 
@@ -95,7 +115,7 @@ class DiseaseModel(Model):
         y[0, :] = np.around(np.random.normal(centers[0, 1], 3, round(int(city_to_country * self.num_agents))))
 
         count = 0
-        while counter(x) > 1:
+        while counter(x) > 2:
             runner = True
             while runner:
                 new_center = (random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10))
@@ -145,6 +165,9 @@ model = DiseaseModel(city_to_country=0.14)
 
 
 def colour_plotter(model):
+    c = mcolors.ColorConverter().to_rgb
+    rvb = make_colormap([c('black'), c('red'), 0.05, c('red'), c('yellow'), 0.5, c('yellow'), c('white')
+                        , 0.9, c('white')])
 
     agent_counts = np.zeros((model.grid.width, model.grid.height))
 
@@ -153,7 +176,7 @@ def colour_plotter(model):
         agent_count = len(cell_content)
         agent_counts[x][y] = agent_count
 
-    plt.imshow(agent_counts, interpolation='nearest', cmap='hot')
+    plt.imshow(agent_counts, interpolation='nearest', cmap=rvb)
     plt.colorbar()
     plt.show()
 
@@ -169,7 +192,7 @@ for day in range(steps):
 colour_plotter(model)
 
 out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
-print(model.datacollector.get_agent_vars_dataframe().groupby('Step'))
+#print(model.datacollector.get_agent_vars_dataframe().groupby('Step'))
 #print(out)
 new_out = out.to_numpy()
 
@@ -179,5 +202,6 @@ plt.xlabel('Days')
 plt.ylabel('No. of People Infected')
 plt.legend()
 plt.grid()
-plt.show()
+plt.show()  # """
 
+print(datetime.datetime.now() - begin_time)
