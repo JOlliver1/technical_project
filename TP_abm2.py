@@ -108,8 +108,8 @@ def infected_plotter(model, day):
 
     plt.rcParams['axes.facecolor'] = 'black'
     plt.figure(figsize=(6, 6))
-    plt.scatter(index_x, index_y, marker='s', c='blue', s=1)
-    plt.scatter(infected_index_x, infected_index_y, marker='s', c='red', s=1)
+    plt.scatter(index_x, index_y, marker='s', c='blue', s=0.5)
+    plt.scatter(infected_index_x, infected_index_y, marker='s', c='red', s=0.5)
     plt.title('Step = ' + str(day) + '     No. Infected = ' + str(no_infected) + '/' + str(model.num_agents))
     plt.show()
 
@@ -149,8 +149,8 @@ def compute_informed(model):
 
 class DiseaseModel(Model):
     def __init__(self, city_to_country):
-        self.num_agents = 10000
-        self.grid = MultiGrid(1000, 1000, True)
+        self.num_agents = 2000
+        self.grid = MultiGrid(200, 200, True)
         self.schedule = RandomActivation(self)
         self.running = True
 
