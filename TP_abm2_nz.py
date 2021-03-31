@@ -82,7 +82,6 @@ def colour_plotter(model):
     plt.figure(figsize=(6, 6))
     plt.imshow(agent_counts.T, interpolation='nearest', cmap=rvb)
     plt.colorbar()
-    #plt.title('Distribution of ' + str(model.num_agents) + ' Agents for the UK')
     plt.show()
 
 
@@ -163,7 +162,7 @@ class DiseaseModel(Model):
         y[0, :] = np.around(np.random.normal(centers[0, 1], 3, round(int(city_to_country * self.num_agents))))
 
         count = 0
-        while counter(x) > 2:
+        while counter(x) > 50:
             runner = True
             while runner:
                 new_center = (random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10))
@@ -209,7 +208,7 @@ class DiseaseModel(Model):
         self.schedule.step()
 
 
-model = DiseaseModel(city_to_country=0.14, no_people=67000000, total_area=240000)
+model = DiseaseModel(city_to_country=0.28, no_people=5000000, total_area=260000)
 
 colour_plotter(model)
 
