@@ -148,7 +148,7 @@ def compute_informed(model):
 
 
 class DiseaseModel(Model):
-    def __init__(self, city_to_country, no_people, total_area):
+    def __init__(self, city_to_country, no_people, total_area, city_to_country_area):
         self.num_agents = 2000
         grid_size = round(math.sqrt((self.num_agents/no_people)*total_area)*100)
         self.grid = MultiGrid(grid_size, grid_size, True)
@@ -171,10 +171,12 @@ class DiseaseModel(Model):
                     centers = np.vstack((centers, new_center))
                     runner = False
 
-            new_x = np.around(np.random.normal(centers[count, 0], 3,
-                                               round(int(city_to_country * self.num_agents) / (count + 2))))
-            new_y = np.around(np.random.normal(centers[count, 1], 3,
-                                               round(int(city_to_country * self.num_agents) / (count + 2))))
+            new_x = np.around(np.random.normal(centers[count, 0], (1/(6*city_to_country_area*(math.sqrt(count+1))))
+                                               * self.grid.width, round(int(city_to_country * self.num_agents)
+                                                                        / (count + 2))))
+            new_y = np.around(np.random.normal(centers[count, 1], (1/(6*city_to_country_area*(math.sqrt(count+1))))
+                                               * self.grid.height, round(int(city_to_country * self.num_agents)
+                                                                         / (count + 2))))
             while len(new_x) < round(int(city_to_country * self.num_agents)):
                 new_x = np.append(new_x, -1)
                 new_y = np.append(new_y, -1)
@@ -209,7 +211,7 @@ class DiseaseModel(Model):
         self.schedule.step()
 
 
-model = DiseaseModel(city_to_country=0.14, no_people=67000000, total_area=240000)
+model = DiseaseModel(city_to_country=0.14, no_people=67000000, total_area=240000, city_to_country_area=13)
 
 colour_plotter(model)
 
