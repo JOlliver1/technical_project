@@ -243,8 +243,12 @@ class DiseaseModel(Model):
         self.schedule.step()
 
 
-model = DiseaseModel(city_to_country=0.28, no_people=5000000, total_area=260000, city_to_country_area=16,
+model = DiseaseModel(city_to_country=0.28,
+                     no_people=5000000,
+                     total_area=260000,
+                     city_to_country_area=16,
                      countryside=0.8)
+
 model1 = DiseaseModel(city_to_country=0.14, no_people=67000000, total_area=240000, city_to_country_area=13,
                       countryside=0.8)
 

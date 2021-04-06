@@ -51,6 +51,19 @@ def counter(array):
     return count
 
 
+def city_labeler(x):
+    home_label = np.zeros(num)
+    count = 0
+
+    for i in range(np.shape(x)[1]):
+        for j in range(np.shape(x)[0]):
+            if x[j, i] != -1:
+                home_label[count] = i+1
+                count += 1
+
+    return home_label
+
+
 def colour_plotter(model):
     c = mcolors.ColorConverter().to_rgb
     rvb = make_colormap([c('black'), c('red'), 0.05, c('red'), c('yellow'), 0.5, c('yellow'), c('white')
@@ -133,9 +146,10 @@ def compute_informed(model):
 
 
 class DiseaseModel(Model):
-    def __init__(self, city_to_country):
-        self.num_agents = 2000
-        self.grid = MultiGrid(200, 200, True)
+    def __init__(self, city_to_country, no_people, total_area, city_to_country_area, countryside, no_agents):
+        self.num_agents = no_agents
+        grid_size = round(math.sqrt((self.num_agents / no_people) * total_area) * 100)
+        self.grid = MultiGrid(grid_size, grid_size, False)
         self.schedule = RandomActivation(self)
         self.running = True
 
@@ -147,7 +161,9 @@ class DiseaseModel(Model):
         y[0, :] = np.around(np.random.normal(centers[0, 1], 3, round(int(city_to_country * self.num_agents))))
 
         count = 0
-        while counter(x) > 2:
+        countryside_count = 0
+        while countryside_count < (countryside * self.num_agents):
+            countryside_count += counter(x)
             runner = True
             while runner:
                 new_center = (random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10))
@@ -155,10 +171,14 @@ class DiseaseModel(Model):
                     centers = np.vstack((centers, new_center))
                     runner = False
 
-            new_x = np.around(np.random.normal(centers[count, 0], 3,
-                                               round(int(city_to_country * self.num_agents) / (count + 2))))
-            new_y = np.around(np.random.normal(centers[count, 1], 3,
-                                               round(int(city_to_country * self.num_agents) / (count + 2))))
+            new_x = np.around(
+                np.random.normal(centers[count, 0], (1 / (6 * city_to_country_area * (math.sqrt(count + 1))))
+                                 * self.grid.width, round(int(city_to_country * self.num_agents)
+                                                          / (count + 2))))
+            new_y = np.around(
+                np.random.normal(centers[count, 1], (1 / (6 * city_to_country_area * (math.sqrt(count + 1))))
+                                 * self.grid.height, round(int(city_to_country * self.num_agents)
+                                                           / (count + 2))))
             while len(new_x) < round(int(city_to_country * self.num_agents)):
                 new_x = np.append(new_x, -1)
                 new_y = np.append(new_y, -1)
@@ -167,11 +187,15 @@ class DiseaseModel(Model):
             y = np.vstack((y, new_y))
             count += 1
 
+        label = city_labeler(x)
+        for i in range(len(label)):
+            city_label[i] = label[i]
+
         new_x = np.delete(x.flatten(), np.where(x.flatten() == -1))
         new_y = np.delete(y.flatten(), np.where(y.flatten() == -1))
 
-        x_countryside = np.around(np.random.uniform(0, self.grid.width-1, int(self.num_agents - len(new_x))))
-        y_countryside = np.around(np.random.uniform(0, self.grid.height-1, int(self.num_agents - len(new_y))))
+        x_countryside = np.around(np.random.uniform(0, self.grid.width - 1, int(self.num_agents - len(new_x))))
+        y_countryside = np.around(np.random.uniform(0, self.grid.height - 1, int(self.num_agents - len(new_y))))
 
         all_x = np.concatenate((new_x, x_countryside))
         all_y = np.concatenate((new_y, y_countryside))
@@ -182,7 +206,7 @@ class DiseaseModel(Model):
             self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
             home_store[i, :] = int(all_x[i]), int(all_y[i])
 
-            if i < 1:
+            if i == 1:
                 a.infected = 1
 
         self.datacollector = DataCollector(
@@ -194,8 +218,15 @@ class DiseaseModel(Model):
         self.schedule.step()
 
 
-home_store = np.zeros((2000, 2))
-model = DiseaseModel(city_to_country=0.14)
+num = 2000
+home_store = np.zeros((num, 2))
+city_label = np.zeros(num)
+model = DiseaseModel(city_to_country=0.14,
+                     no_people=67000000,
+                     total_area=240000,
+                     city_to_country_area=13,
+                     countryside=0.8,
+                     no_agents=num)
 
 #colour_plotter(model)
 

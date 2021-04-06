@@ -148,10 +148,10 @@ def compute_informed(model):
 
 
 class DiseaseModel(Model):
-    def __init__(self, city_to_country, no_people, total_area, city_to_country_area):
+    def __init__(self, city_to_country, no_people, total_area, city_to_country_area, countryside):
         self.num_agents = 2000
         grid_size = round(math.sqrt((self.num_agents/no_people)*total_area)*100)
-        self.grid = MultiGrid(grid_size, grid_size, True)
+        self.grid = MultiGrid(grid_size, grid_size, False)
         self.schedule = RandomActivation(self)
         self.running = True
 
@@ -163,7 +163,9 @@ class DiseaseModel(Model):
         y[0, :] = np.around(np.random.normal(centers[0, 1], 3, round(int(city_to_country * self.num_agents))))
 
         count = 0
-        while counter(x) > 2:
+        countryside_count = 0
+        while countryside_count < (countryside * self.num_agents):
+            countryside_count += counter(x)
             runner = True
             while runner:
                 new_center = (random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10))
@@ -211,7 +213,11 @@ class DiseaseModel(Model):
         self.schedule.step()
 
 
-model = DiseaseModel(city_to_country=0.14, no_people=67000000, total_area=240000, city_to_country_area=13)
+model = DiseaseModel(city_to_country=0.14,
+                     no_people=67000000,
+                     total_area=240000,
+                     city_to_country_area=13,
+                     countryside=0.8)
 
 colour_plotter(model)
 
