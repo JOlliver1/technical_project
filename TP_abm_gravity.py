@@ -29,7 +29,7 @@ def dist_check(pos1, pos2):
     for i in range(np.shape(pos2)[0]):
         distance.append(math.sqrt(abs(pos1[0]-pos2[i, 0])**2 + abs(pos1[1]-pos2[i, 1])**2))
 
-    if all(x > 25 for x in distance):
+    if all(x > 10 for x in distance):
         return True
     else:
         return False
@@ -146,7 +146,7 @@ def compute_informed(model):
 
 
 class DiseaseModel(Model):
-    def __init__(self, city_to_country, no_people, total_area, city_to_country_area, countryside, no_agents):
+    def __init__(self, city_to_country, no_people, total_area, city_to_country_area, countryside, no_agents, Nc_N):
         self.num_agents = no_agents
         grid_size = round(math.sqrt((self.num_agents / no_people) * total_area) * 100)
         self.grid = MultiGrid(grid_size, grid_size, False)
@@ -167,7 +167,7 @@ class DiseaseModel(Model):
             runner = True
             while runner:
                 new_center = (random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10))
-                if dist_check(new_center, centers) & count < 20:
+                if dist_check(new_center, centers):
                     centers = np.vstack((centers, new_center))
                     runner = False
 
@@ -200,16 +200,6 @@ class DiseaseModel(Model):
         all_x = np.concatenate((new_x, x_countryside))
         all_y = np.concatenate((new_y, y_countryside))
 
-        n = 10
-        work_store = np.zeros((round(len(centers)/2), n))
-
-        for i in range(round(len(centers)/2)):
-            n_cities = random.sample(range(1, round(len(centers)/2)), n)
-
-            for j in n_cities:
-                print(centers[j, :])
-                #work_store[i, j] =
-
         for i in range(self.num_agents):
             a = Agent(i, self)
             self.schedule.add(a)
@@ -218,6 +208,40 @@ class DiseaseModel(Model):
 
             if i == 1:
                 a.infected = 1
+
+        n = 20
+        n_city_store = np.zeros((round(len(centers) / 2), n))
+        flux_store = np.zeros((1, 3))
+
+        for i in range(round(len(centers) / 2)):
+            n_cities = random.sample(range(0, round(len(centers) / 2)), n)
+            n_city_store[i, :] = n_cities
+
+            for j in range(len(n_cities)):
+                mi = np.count_nonzero(home_store == i+1)
+                nj = np.count_nonzero(home_store == n_cities[j])
+                radius = math.sqrt((centers[i, 0] - centers[n_cities[j], 0]) ** 2 +
+                                   (centers[i, 1] - centers[n_cities[j], 1]) ** 2)
+                sij = 0
+
+                for k in range(len(all_x)):
+                    if (all_x[k] - centers[i, 0]) ** 2 + (all_y[k] - centers[i, 1]) ** 2 < radius ** 2:
+                        sij += 1
+
+                sij = sij - mi - nj
+                if sij < 0:
+                    sij = 0
+
+                Tij = (mi * Nc_N * mi * nj) / ((mi + sij) * (mi + nj + sij))*10
+                if Tij > 1 and i != j:
+                    flux_store = np.vstack((flux_store, (Tij, i, n_cities[j])))
+
+        print(flux_store)
+        #work_store = np.zeros(self.num_agents)
+
+        #for i in range(len(n_city_store[0])):
+            #for j in range(len(n_city_store[1])):
+
 
         self.datacollector = DataCollector(
             model_reporters={"Tot informed": compute_informed},
@@ -236,7 +260,8 @@ model = DiseaseModel(city_to_country=0.14,
                      total_area=240000,
                      city_to_country_area=13,
                      countryside=0.8,
-                     no_agents=num)
+                     no_agents=num,
+                     Nc_N=0.2)
 
 #colour_plotter(model)
 

@@ -29,7 +29,7 @@ def dist_check(pos1, pos2):
     for i in range(np.shape(pos2)[0]):
         distance.append(math.sqrt(abs(pos1[0]-pos2[i, 0])**2 + abs(pos1[1]-pos2[i, 1])**2))
 
-    if all(x > 25 for x in distance):
+    if all(x > 10 for x in distance):
         return True
     else:
         return False
@@ -199,7 +199,7 @@ class DiseaseModel(Model):
             runner = True
             while runner:
                 new_center = (random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10))
-                if dist_check(new_center, centers) & count < 20:
+                if dist_check(new_center, centers):
                     centers = np.vstack((centers, new_center))
                     runner = False
 
