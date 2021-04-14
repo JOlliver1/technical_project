@@ -200,6 +200,16 @@ class DiseaseModel(Model):
         all_x = np.concatenate((new_x, x_countryside))
         all_y = np.concatenate((new_y, y_countryside))
 
+        n = 10
+        work_store = np.zeros((round(len(centers)/2), n))
+
+        for i in range(round(len(centers)/2)):
+            n_cities = random.sample(range(1, round(len(centers)/2)), n)
+
+            for j in n_cities:
+                print(centers[j, :])
+                #work_store[i, j] =
+
         for i in range(self.num_agents):
             a = Agent(i, self)
             self.schedule.add(a)
