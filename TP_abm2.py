@@ -135,6 +135,7 @@ class Agent(Agent):
             possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
             new_position = self.random.choice(possible_steps)
             self.model.grid.move_agent(self, new_position)
+            print(type(new_position), new_position)
         else:
             return
 
