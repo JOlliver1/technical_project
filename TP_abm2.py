@@ -115,6 +115,59 @@ def infected_plotter(model, day):
     plt.show()
 
 
+def infected_plotter1(model, day):
+
+    no_infected = sum([1 for a in model.schedule.agents if a.infected == 1])
+    infected_index_x = np.zeros(no_infected)
+    index_x = np.zeros(model.num_agents)
+    infected_index_y = np.zeros(no_infected)
+    index_y = np.zeros(model.num_agents)
+    count = 0
+    count1 = 0
+
+    for cell in model.grid.coord_iter():
+        cell_content, x, y = cell
+        for a in cell_content:
+            index_x[count1] = x
+            index_y[count1] = model.grid.height - y
+            count1 += 1
+            if a.infected == 1:
+                infected_index_x[count] = x
+                infected_index_y[count] = model.grid.height - y
+                count += 1
+
+    plt.rcParams['axes.facecolor'] = 'white'
+    plt.figure(figsize=(6, 6))
+    plt.scatter(index_x, index_y, marker='s', c='blue', s=0.5)
+    plt.scatter(infected_index_x, infected_index_y, marker='s', c='red', s=0.5)
+    plt.title('Step = ' + str(day) + '     No. Infected = ' + str(no_infected) + '/' + str(model.num_agents))
+    plt.show()
+
+
+def infected_calc(model):
+
+    no_infected = sum([1 for a in model.schedule.agents if a.infected == 1])
+    infected_index_x = np.zeros(no_infected)
+    index_x = np.zeros(model.num_agents)
+    infected_index_y = np.zeros(no_infected)
+    index_y = np.zeros(model.num_agents)
+    count = 0
+    count1 = 0
+
+    for cell in model.grid.coord_iter():
+        cell_content, x, y = cell
+        for a in cell_content:
+            index_x[count1] = x
+            index_y[count1] = model.grid.height - y
+            count1 += 1
+            if a.infected == 1:
+                infected_index_x[count] = x
+                infected_index_y[count] = model.grid.height - y
+                count += 1
+
+    return index_x, index_y, infected_index_x, infected_index_y, no_infected
+
+
 class Agent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -131,11 +184,11 @@ class Agent(Agent):
                     a.infected = 1
 
     def move(self):
-        if random.uniform(0, 1) < average[day]/100:
+        if 10 < 20:  # random.uniform(0, 1) < average[day]/100:
             possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
             new_position = self.random.choice(possible_steps)
             self.model.grid.move_agent(self, new_position)
-            print(type(new_position), new_position)
+            #print(type(new_position), new_position)
         else:
             return
 
@@ -187,6 +240,7 @@ class DiseaseModel(Model):
             x = np.vstack((x, new_x))
             y = np.vstack((y, new_y))
             count += 1
+            print(count, new_center)
 
         new_x = np.delete(x.flatten(), np.where(x.flatten() == -1))
         new_y = np.delete(y.flatten(), np.where(y.flatten() == -1))
@@ -220,19 +274,87 @@ model = DiseaseModel(city_to_country=0.14,
                      city_to_country_area=13,
                      countryside=0.8)
 
-colour_plotter(model)
+infected_plotter1(model, 0)
+
+#colour_plotter(model)
 
 #recovery_count = np.zeros(1000)
 
-steps = 289
+"""steps = 289
 for day in range(steps):
     if day % 10 == 0:
         infected_plotter(model, day)
     elif day < 10:
         infected_plotter(model, day)
+    model.step()"""
+"""
+steps = 289
+for day in range(steps):
+    if day == 0:
+        index_x, index_y, infected_index_x, infected_index_y, no_infected = infected_calc(model)
+    if day == 5:
+        index_x1, index_y1, infected_index_x1, infected_index_y1, no_infected1 = infected_calc(model)
+    if day == 10:
+        index_x5, index_y5, infected_index_x5, infected_index_y5, no_infected5 = infected_calc(model)
+    if day == 50:
+        index_x10, index_y10, infected_index_x10, infected_index_y10, no_infected10 = infected_calc(model)
+    if day == 100:
+        index_x50, index_y50, infected_index_x50, infected_index_y50, no_infected50 = infected_calc(model)
+    if day == 200:
+        index_x100, index_y100, infected_index_x100, infected_index_y100, no_infected100 = infected_calc(model)
     model.step()
 
-colour_plotter(model)
+plt.rcParams['axes.facecolor'] = 'black'
+#plt.figure(figsize=(12, 6))
+fig, ax = plt.subplots(2, 3, figsize=(10, 7))
+#fig.figure(figsize=(10, 10))
+
+#plt.subplot(3, 3, 1)
+ax[0, 0].scatter(index_x, index_y, marker='s', c='blue', s=0.5)
+ax[0, 0].scatter(infected_index_x, infected_index_y, marker='s', c='red', s=0.5)
+ax[0, 0].title.set_text('Step=' + str(0) + '     No. Infected=' + str(no_infected) + '/' + str(2000))
+ax[0, 0].axes.get_xaxis().set_visible(False)
+ax[0, 0].axes.get_yaxis().set_visible(False)
+
+#plt.subplot(3, 3, 2)
+ax[0, 1].scatter(index_x1, index_y1, marker='s', c='blue', s=0.5)
+ax[0, 1].scatter(infected_index_x1, infected_index_y1, marker='s', c='red', s=0.5)
+ax[0, 1].title.set_text('Step=' + str(5) + '     No. Infected=' + str(no_infected1) + '/' + str(2000))
+ax[0, 1].axes.get_xaxis().set_visible(False)
+ax[0, 1].axes.get_yaxis().set_visible(False)
+
+#plt.subplot(3, 3, 3)
+ax[0, 2].scatter(index_x5, index_y5, marker='s', c='blue', s=0.5)
+ax[0, 2].scatter(infected_index_x5, infected_index_y5, marker='s', c='red', s=0.5)
+ax[0, 2].title.set_text('Step=' + str(10) + '     No. Infected=' + str(no_infected5) + '/' + str(2000))
+ax[0, 2].axes.get_xaxis().set_visible(False)
+ax[0, 2].axes.get_yaxis().set_visible(False)
+
+#plt.subplot(3, 3, 4)
+ax[1, 0].scatter(index_x10, index_y10, marker='s', c='blue', s=0.5)
+ax[1, 0].scatter(infected_index_x10, infected_index_y10, marker='s', c='red', s=0.5)
+ax[1, 0].title.set_text('Step=' + str(50) + '     No. Infected=' + str(no_infected10) + '/' + str(2000))
+ax[1, 0].axes.get_xaxis().set_visible(False)
+ax[1, 0].axes.get_yaxis().set_visible(False)
+
+#plt.subplot(3, 3, 5)
+ax[1, 1].scatter(index_x50, index_y50, marker='s', c='blue', s=0.5)
+ax[1, 1].scatter(infected_index_x50, infected_index_y50, marker='s', c='red', s=0.5)
+ax[1, 1].title.set_text('Step=' + str(100) + '     No. Infected=' + str(no_infected50) + '/' + str(2000))
+ax[1, 1].axes.get_xaxis().set_visible(False)
+ax[1, 1].axes.get_yaxis().set_visible(False)
+
+#plt.subplot(3, 3, 6)
+ax[1, 2].scatter(index_x100, index_y100, marker='s', c='blue', s=0.5)
+ax[1, 2].scatter(infected_index_x100, infected_index_y100, marker='s', c='red', s=0.5)
+ax[1, 2].title.set_text('Step=' + str(200) + '     No. Infected=' + str(no_infected100) + '/' + str(2000))
+ax[1, 2].axes.get_xaxis().set_visible(False)
+ax[1, 2].axes.get_yaxis().set_visible(False)
+
+fig.tight_layout()
+plt.show()"""
+
+"""colour_plotter(model)
 
 out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 #print(model.datacollector.get_agent_vars_dataframe().groupby('Step'))

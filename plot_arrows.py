@@ -103,6 +103,9 @@ def infected_plotter(model, day):
                 infected_index_y[count] = model.grid.height - y
                 count += 1
 
+    work_store2 = work_store
+    print(work_store2)
+
     plt.rcParams['axes.facecolor'] = 'black'
     plt.figure(figsize=(6, 6))
     plt.scatter(index_x, index_y, marker='s', c='blue', s=0.5)
@@ -233,7 +236,7 @@ class DiseaseModel(Model):
                 a.infected = 1
                 #a.working = 1
 
-        n = 50
+        n = 10
         flux_store = np.zeros((1, 3))
 
         for i in range(round(len(centers) / 2)):
@@ -262,7 +265,7 @@ class DiseaseModel(Model):
                 if Tij > 75:
                     Tij = 75
 
-                if Tij > 1 and (i != n_cities[j]):
+                if Tij > 1 and (i != n_cities[j]):  # increase this and plot arrows
                     flux_store = np.vstack((flux_store, (Tij, i+1, n_cities[j])))
 
         work_place = np.zeros(self.num_agents)
@@ -310,18 +313,19 @@ model = DiseaseModel(city_to_country=0.14,
 #colour_plotter(model)
 
 #recovery_count = np.zeros(1000)
+infected_plotter(model, 0)
 
-steps = 500
+"""steps = 500
 for day in range(steps):
     if day % 10 == 0:
         infected_plotter(model, day)
     elif day < 20:
         infected_plotter(model, day)
-    model.step()
+    model.step()"""
 
 #colour_plotter(model)
 
-out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+"""out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out = out.to_numpy()
 
 plt.rcParams['axes.facecolor'] = 'white'
@@ -334,3 +338,4 @@ plt.grid()
 plt.show()  # """
 
 print(datetime.datetime.now() - begin_time)
+
