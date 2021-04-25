@@ -10,7 +10,7 @@ import random
 import math
 import datetime
 
-from import_apple_data import average
+from import_apple_data import average_uk
 
 begin_time = datetime.datetime.now()
 
@@ -115,7 +115,7 @@ def infected_plotter(model, day):
     plt.show()
 
 
-def infected_plotter1(model, day):
+def infected_plotter1(model, day, centers1):
 
     no_infected = sum([1 for a in model.schedule.agents if a.infected == 1])
     infected_index_x = np.zeros(no_infected)
@@ -136,11 +136,29 @@ def infected_plotter1(model, day):
                 infected_index_y[count] = model.grid.height - y
                 count += 1
 
+    for i in centers1:
+        i[1] = model.grid.height - i[1]
+
+    city_1 = centers1[0, :]
+    city_2 = centers1[1, :]
+    radius = math.sqrt((city_1[0] - city_2[0]) ** 2 + (city_1[1] - city_2[1]) ** 2)
+    circle = plt.Circle((city_1[0], city_1[1]), radius, color='black', fill=False)
+    circle1 = plt.Circle((city_1[0], city_1[1]), 10, color='black', fill=False)
+    circle2 = plt.Circle((city_2[0], city_2[1]), 6, color='black', fill=False)
+
+    #print(city_1[0], city_1[1])
     plt.rcParams['axes.facecolor'] = 'white'
-    plt.figure(figsize=(6, 6))
-    plt.scatter(index_x, index_y, marker='s', c='blue', s=0.5)
-    plt.scatter(infected_index_x, infected_index_y, marker='s', c='red', s=0.5)
-    plt.title('Step = ' + str(day) + '     No. Infected = ' + str(no_infected) + '/' + str(model.num_agents))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 6), squeeze=False)
+    ax[0, 0].scatter(index_x, index_y, marker='s', c='blue', s=0.5)
+    ax[0, 0].scatter(infected_index_x, infected_index_y, marker='s', c='red', s=0.5)
+    ax[0, 0].arrow(city_1[0], city_1[1], city_2[0]-city_1[0], city_2[1]-city_1[1], fc="k", ec="k", head_width=5,
+              head_length=10, width=0.7, length_includes_head=True)
+    ax[0, 0].add_patch(circle)
+    ax[0, 0].add_patch(circle1)
+    ax[0, 0].add_patch(circle2)
+    #plt.title('Step = ' + str(day) + '     No. Infected = ' + str(no_infected) + '/' + str(model.num_agents))
+    ax[0, 0].axes.get_xaxis().set_visible(False)
+    ax[0, 0].axes.get_yaxis().set_visible(False)
     plt.show()
 
 
@@ -184,7 +202,7 @@ class Agent(Agent):
                     a.infected = 1
 
     def move(self):
-        if 10 < 20:  # random.uniform(0, 1) < average[day]/100:
+        if 10 < 20:  # random.uniform(0, 1) < average_uk[day]/100:
             possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
             new_position = self.random.choice(possible_steps)
             self.model.grid.move_agent(self, new_position)
@@ -209,6 +227,7 @@ class DiseaseModel(Model):
         self.schedule = RandomActivation(self)
         self.running = True
 
+        global centers
         centers = np.zeros((1, 2))
         centers[0, :] = random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10)
         x = np.zeros((1, round(int(city_to_country * self.num_agents))))
@@ -240,7 +259,6 @@ class DiseaseModel(Model):
             x = np.vstack((x, new_x))
             y = np.vstack((y, new_y))
             count += 1
-            print(count, new_center)
 
         new_x = np.delete(x.flatten(), np.where(x.flatten() == -1))
         new_y = np.delete(y.flatten(), np.where(y.flatten() == -1))
@@ -274,7 +292,9 @@ model = DiseaseModel(city_to_country=0.14,
                      city_to_country_area=13,
                      countryside=0.8)
 
-infected_plotter1(model, 0)
+infected_plotter1(model, 0, centers)
+
+#print(centers)
 
 #colour_plotter(model)
 

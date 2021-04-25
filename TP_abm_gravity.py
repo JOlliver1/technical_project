@@ -10,7 +10,7 @@ import random
 import math
 import datetime
 
-from import_apple_data import average
+#from import_apple_data import average_uk
 
 begin_time = datetime.datetime.now()
 
@@ -169,7 +169,7 @@ def compute_informed(model):
 
 
 class DiseaseModel(Model):
-    def __init__(self, city_to_country, no_people, total_area, city_to_country_area, countryside, no_agents, Nc_N):
+    def __init__(self, city_to_country, no_people, total_area, city_to_country_area, countryside, no_agents, Nc_N, n):
         self.num_agents = no_agents
         grid_size = round(math.sqrt((self.num_agents / no_people) * total_area) * 100)
         self.grid = MultiGrid(grid_size, grid_size, False)
@@ -233,11 +233,12 @@ class DiseaseModel(Model):
                 a.infected = 1
                 #a.working = 1
 
-        n = 50
         flux_store = np.zeros((1, 3))
 
         for i in range(round(len(centers) / 2)):
-            n_cities = random.sample(range(1, round(len(centers) / 3)), n)
+            print(i)
+            #print(round(len(centers))/2)
+            n_cities = random.sample(range(1, round(len(centers) / 2)), n)
 
             for j in range(len(n_cities)):
                 mi = np.count_nonzero(city_label == i+1)
@@ -305,18 +306,20 @@ model = DiseaseModel(city_to_country=0.14,
                      city_to_country_area=13,
                      countryside=0.8,
                      no_agents=num,
-                     Nc_N=0.2)
+                     Nc_N=0.2,
+                     n=83)
 
 #colour_plotter(model)
 
 #recovery_count = np.zeros(1000)
 
-steps = 500
+steps = 461
 for day in range(steps):
-    if day % 10 == 0:
+    infected_plotter(model, day)
+    """if day % 10 == 0:
         infected_plotter(model, day)
     elif day < 20:
-        infected_plotter(model, day)
+        infected_plotter(model, day)"""
     model.step()
 
 #colour_plotter(model)
