@@ -33,6 +33,11 @@ walking_nz = [float(i) for i in apple_data_nz[2, 6:]]
 average_uk = np.mean([driving_uk, walking_uk, transit_uk], axis=0)
 average_nz = np.mean([driving_nz, walking_nz, transit_nz], axis=0)
 
+average_uk = average_uk[:-11]
+average_nz = average_nz[:-11]
+
+#print(len(average_uk))
+
 """
 new_average = np.concatenate((average[:28], average[:28], average[:-56]), axis=None)
 newer_average = np.concatenate((average[28:], average[-28:]), axis=None)"""

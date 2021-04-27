@@ -240,7 +240,8 @@ def agent_locator(city_to_country, no_people, total_area, city_to_country_area, 
 
 
 class DiseaseModel(Model):
-    def __init__(self, no_people, total_area, no_agents, Nc_N, n, all_x, all_y, centers, infection_rate, city_label):
+    def __init__(self, no_people, total_area, no_agents, Nc_N, n, all_x, all_y, centers, infection_rate, city_label,
+                 first_infected):
         self.num_agents = no_agents
         grid_size = round(math.sqrt((self.num_agents / no_people) * total_area) * 100)
         self.grid = MultiGrid(grid_size, grid_size, False)
@@ -308,7 +309,7 @@ class DiseaseModel(Model):
             self.schedule.add(a)
             self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
 
-            if i == 1:
+            if i == first_infected:
                 a.infected = 1
 
         self.datacollector = DataCollector(
@@ -338,6 +339,8 @@ all_x, all_y, centers, city_label = agent_locator(city_to_country,
                                       countryside,
                                       num)
 
+######### PLOT ONE GRID JUST TO CHECK, GO THROUGH CITIES LIKE 1, 3, 5, 10, 15 ETC.
+
 model = DiseaseModel(no_people=67000000,
                      total_area=240000,
                      no_agents=num,
@@ -347,7 +350,8 @@ model = DiseaseModel(no_people=67000000,
                      all_y=all_y,
                      centers=centers,
                      infection_rate=1,
-                     city_label=city_label)
+                     city_label=city_label,
+                     first_infected=1)
 
 print('model init')
 
@@ -384,8 +388,9 @@ model1 = DiseaseModel(no_people=67000000,
                       all_x=all_x,
                       all_y=all_y,
                       centers=centers,
-                      infection_rate=0.8,
-                      city_label=city_label)
+                      infection_rate=1,
+                      city_label=city_label,
+                      first_infected=290)
 
 print('model1 init')
 
@@ -406,8 +411,9 @@ model2 = DiseaseModel(no_people=67000000,
                       all_x=all_x,
                       all_y=all_y,
                       centers=centers,
-                      infection_rate=0.6,
-                      city_label=city_label)
+                      infection_rate=1,
+                      city_label=city_label,
+                      first_infected=430)
 
 print('model2 init')
 
@@ -428,8 +434,9 @@ model3 = DiseaseModel(no_people=67000000,
                       all_x=all_x,
                       all_y=all_y,
                       centers=centers,
-                      infection_rate=0.4,
-                      city_label=city_label)
+                      infection_rate=1,
+                      city_label=city_label,
+                      first_infected=530)
 
 print('model3 init')
 
@@ -450,8 +457,9 @@ model4 = DiseaseModel(no_people=67000000,
                       all_x=all_x,
                       all_y=all_y,
                       centers=centers,
-                      infection_rate=0.2,
-                      city_label=city_label)
+                      infection_rate=1,
+                      city_label=city_label,
+                      first_infected=590)
 
 print('model4 init')
 
@@ -484,11 +492,11 @@ new_out4 = out4.to_numpy()
 plt.rcParams['axes.facecolor'] = 'white'
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 
-ax.plot(np.arange(0, steps), new_out, color='blue', label='infection rate=1')
-ax.plot(np.arange(0, steps1), new_out1, color='red', label='infection rate=0.8')
-ax.plot(np.arange(0, steps2), new_out2, color='green', label='infection rate=0.6')
-ax.plot(np.arange(0, steps3), new_out3, color='orange', label='infection rate=0.4')
-ax.plot(np.arange(0, steps4), new_out4, color='pink', label='infection rate=0.2')
+ax.plot(np.arange(0, steps), new_out, color='blue', label='city=1')
+ax.plot(np.arange(0, steps1), new_out1, color='red', label='city=2')
+ax.plot(np.arange(0, steps2), new_out2, color='green', label='city=3')
+ax.plot(np.arange(0, steps3), new_out3, color='orange', label='city=4')
+ax.plot(np.arange(0, steps4), new_out4, color='pink', label='city=5')
 ax.set_xlabel('Steps')
 ax.set_ylabel('No. of People Infected')
 ax.legend()
