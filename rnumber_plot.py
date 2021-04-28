@@ -132,6 +132,7 @@ class Agent(Agent):
         super().__init__(unique_id, model)
         self.infected = 0
         self.working = 0
+        self.rnumber = 0
         self.infection = infection_rate
         self.work_store = work_store
         self.home_store = home_store
@@ -145,6 +146,7 @@ class Agent(Agent):
             for a in cellmates:
                 if a.infected != 1 and random.uniform(0, 1) < self.infection:
                     a.infected = 1
+                    self.rnumber += 1
 
     def move(self):
         if random.uniform(0, 1) < spread_average_uk[day_step] / 100:
@@ -183,6 +185,7 @@ class Agent1(Agent):
         super().__init__(unique_id, model, infection_rate, work_store, home_store)
         self.infected = 0
         self.working = 0
+        self.rnumber = 0
         self.infection = infection_rate
         self.work_store = work_store
         self.home_store = home_store
@@ -196,6 +199,7 @@ class Agent1(Agent):
             for a in cellmates:
                 if a.infected != 1 and random.uniform(0, 1) < self.infection:
                     a.infected = 1
+                    self.rnumber += 1
 
     def move(self):
         if (day_step % 8) - 2 == 0:
@@ -482,4 +486,3 @@ fig.tight_layout()
 plt.show()
 
 print(datetime.datetime.now() - begin_time)
-
