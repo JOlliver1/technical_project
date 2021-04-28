@@ -37,6 +37,23 @@ average_uk = average_uk[:-11]
 average_nz = average_nz[:-11]
 
 #print(len(average_uk))
+spread_average_uk = np.zeros(len(average_uk)*8)
+
+for i in range(len(average_uk)):
+    for j in range(0, 8):
+        spread_average_uk[(i*8)+j] = average_uk[i]
+
+spread_average_uk = spread_average_uk[490:]
+
+"""plt.figure(figsize=(10, 5))
+plt.plot(np.arange(0, len(spread_average_uk)), 100*np.ones(len(spread_average_uk)), color='black', label='Baseline')
+plt.plot(np.arange(0, len(spread_average_uk)), spread_average_uk, label='Average', color='red')
+plt.ylabel('%')
+plt.xlabel('Days')
+plt.grid(linestyle='--')
+plt.legend()
+plt.show()"""
+
 
 """
 new_average = np.concatenate((average[:28], average[:28], average[:-56]), axis=None)
