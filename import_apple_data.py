@@ -43,7 +43,8 @@ for i in range(len(average_uk)):
     for j in range(0, 8):
         spread_average_uk[(i*8)+j] = average_uk[i]
 
-spread_average_uk = spread_average_uk[490:]
+spread_average_uk = spread_average_uk[490:891]#891
+
 
 """plt.figure(figsize=(10, 5))
 plt.plot(np.arange(0, len(spread_average_uk)), 100*np.ones(len(spread_average_uk)), color='black', label='Baseline')

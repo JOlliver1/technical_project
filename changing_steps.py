@@ -10,7 +10,7 @@ import random
 import math
 import datetime
 
-from import_apple_data import *
+from import_apple_data import average_uk
 
 begin_time = datetime.datetime.now()
 
@@ -128,13 +128,14 @@ def infected_plotter(model, day):
 
 
 class Agent(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store):
+    def __init__(self, unique_id, model, infection_rate, work_store, home_store, no_steps):
         super().__init__(unique_id, model)
         self.infected = 0
         self.working = 0
         self.infection = infection_rate
         self.work_store = work_store
         self.home_store = home_store
+        self.no_steps = no_steps
 
     def spread_disease(self):
         if self.infected == 0:
@@ -147,64 +148,14 @@ class Agent(Agent):
                     a.infected = 1
 
     def move(self):
-        if random.uniform(0, 1) < spread_average_uk[day_step] / 100:
-            if (day_step % 8) - 2 == 0:
-                if self.work_store[self.unique_id, 0] != 0:
-                    new_position = (tuple(self.work_store[self.unique_id, :]))
-                    self.model.grid.move_agent(self, new_position)
-                    self.working = 1
-
-            if (day_step % 8) - 6 == 0:
-                if self.work_store[self.unique_id, 0] != 0:
-                    new_position = (tuple(self.home_store[self.unique_id, :]))
-                    self.model.grid.move_agent(self, new_position)
-                    self.working = 0
-            else:
-                possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
-                while True:
-                    if self.working == 0:
-                        new_position = self.random.choice(possible_steps)
-                        if find_dist(new_position, self.home_store[self.unique_id, :]) <= 5:
-                            self.model.grid.move_agent(self, new_position)
-                            break
-                    elif self.working == 1:
-                        new_position = self.random.choice(possible_steps)
-                        if find_dist(new_position, self.work_store[self.unique_id, :]) <= 5:
-                            self.model.grid.move_agent(self, new_position)
-                            break
-
-    def step(self):
-        self.move()
-        self.spread_disease()
-
-
-class Agent1(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store):
-        super().__init__(unique_id, model, infection_rate, work_store, home_store)
-        self.infected = 0
-        self.working = 0
-        self.infection = infection_rate
-        self.work_store = work_store
-        self.home_store = home_store
-
-    def spread_disease(self):
-        if self.infected == 0:
-            return
-
-        else:
-            cellmates = self.model.grid.get_cell_list_contents([self.pos])
-            for a in cellmates:
-                if a.infected != 1 and random.uniform(0, 1) < self.infection:
-                    a.infected = 1
-
-    def move(self):
-        if (day_step % 8) - 2 == 0:
+        #day = math.floor(day_step/self.no_steps)
+        if (day_step % self.no_steps) - 1 == 0:
             if self.work_store[self.unique_id, 0] != 0:
                 new_position = (tuple(self.work_store[self.unique_id, :]))
                 self.model.grid.move_agent(self, new_position)
                 self.working = 1
 
-        if (day_step % 8) - 6 == 0:
+        if (day_step % self.no_steps) - (self.no_steps-2) == 0:
             if self.work_store[self.unique_id, 0] != 0:
                 new_position = (tuple(self.home_store[self.unique_id, :]))
                 self.model.grid.move_agent(self, new_position)
@@ -290,7 +241,7 @@ def agent_locator(city_to_country, no_people, total_area, city_to_country_area, 
 
 class DiseaseModel(Model):
     def __init__(self, no_people, total_area, no_agents, Nc_N, n, all_x, all_y, centers, infection_rate, city_label,
-                 first_infected, mobility_data):
+                 no_steps):
         self.num_agents = no_agents
         grid_size = round(math.sqrt((self.num_agents / no_people) * total_area) * 100)
         self.grid = MultiGrid(grid_size, grid_size, False)
@@ -354,16 +305,11 @@ class DiseaseModel(Model):
         home_store = np.int64(home_store1)
 
         for i in range(self.num_agents):
-            if mobility_data:
-                a = Agent(i, self, infection_rate, work_store, home_store)
-                self.schedule.add(a)
-                self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
-            else:
-                a = Agent1(i, self, infection_rate, work_store, home_store)
-                self.schedule.add(a)
-                self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
+            a = Agent(i, self, infection_rate, work_store, home_store, no_steps)
+            self.schedule.add(a)
+            self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
 
-            if i == first_infected:
+            if i == 1:
                 a.infected = 1
 
         self.datacollector = DataCollector(
@@ -377,109 +323,222 @@ class DiseaseModel(Model):
 
 num = 2000
 
-#home_store1 = np.zeros((num, 2))
-#city_label = np.zeros(num)
-
 city_to_country = 0.14
 no_people = 67000000
 total_area = 240000
 city_to_country_area = 13
 countryside = 0.8
 
-all_x, all_y, centers, city_label = agent_locator(city_to_country,
-                                                  no_people,
-                                                  total_area,
-                                                  city_to_country_area,
-                                                  countryside,
-                                                  num)
+infection_rate = 0.1
+n = 50
 
+all_x, all_y, centers, city_label = agent_locator(city_to_country,
+                                      no_people,
+                                      total_area,
+                                      city_to_country_area,
+                                      countryside,
+                                      num)
 
 model = DiseaseModel(no_people=67000000,
                      total_area=240000,
                      no_agents=num,
                      Nc_N=0.2,
-                     n=50,
+                     n=n,
                      all_x=all_x,
                      all_y=all_y,
                      centers=centers,
-                     infection_rate=0.08,
+                     infection_rate=infection_rate,
                      city_label=city_label,
-                     first_infected=1,
-                     mobility_data=True)
+                     no_steps=5)
 
 print('model init')
 
-steps = len(spread_average_uk)
+steps = 50*5
 for day_step in range(steps):
     model.step()
     print(day_step, datetime.datetime.now() - begin_time)
 
+#############################################################################
 
 model1 = DiseaseModel(no_people=67000000,
                       total_area=240000,
                       no_agents=num,
                       Nc_N=0.2,
-                      n=50,
+                      n=n,
                       all_x=all_x,
                       all_y=all_y,
                       centers=centers,
-                      infection_rate=0.08,
+                      infection_rate=infection_rate,
                       city_label=city_label,
-                      first_infected=1,
-                      mobility_data=False)
+                      no_steps=8)
 
 print('model1 init')
 
-steps1 = len(spread_average_uk)
+steps1 = 50*8
 for day_step in range(steps1):
     model1.step()
     print(day_step, datetime.datetime.now() - begin_time)
 
-out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
-new_out = out.to_numpy()
+#############################################################################
 
-out1 = model1.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
-new_out1 = out1.to_numpy()
+model2 = DiseaseModel(no_people=67000000,
+                      total_area=240000,
+                      no_agents=num,
+                      Nc_N=0.2,
+                      n=n,
+                      all_x=all_x,
+                      all_y=all_y,
+                      centers=centers,
+                      infection_rate=infection_rate,
+                      city_label=city_label,
+                      no_steps=12)
 
+print('model2 init')
+
+steps2 = 50*12
+for day_step in range(steps2):
+    model2.step()
+    print(day_step, datetime.datetime.now() - begin_time)
+
+#############################################################################
+
+model3 = DiseaseModel(no_people=67000000,
+                      total_area=240000,
+                      no_agents=num,
+                      Nc_N=0.2,
+                      n=n,
+                      all_x=all_x,
+                      all_y=all_y,
+                      centers=centers,
+                      infection_rate=infection_rate,
+                      city_label=city_label,
+                      no_steps=20)
+
+print('model3 init')
+
+steps3 = 50*20
+for day_step in range(steps3):
+    model3.step()
+    print(day_step, datetime.datetime.now() - begin_time)
+
+#############################################################################
+
+model4 = DiseaseModel(no_people=67000000,
+                      total_area=240000,
+                      no_agents=num,
+                      Nc_N=0.2,
+                      n=n,
+                      all_x=all_x,
+                      all_y=all_y,
+                      centers=centers,
+                      infection_rate=infection_rate,
+                      city_label=city_label,
+                      no_steps=30)
+
+print('model4 init')
+
+steps4 = 50*30
+for day_step in range(steps4):
+    model4.step()
+    print(day_step, datetime.datetime.now() - begin_time)
+
+#############################################################################
+
+infection_panda = model.datacollector.get_agent_vars_dataframe()
+infection_np = infection_panda.to_numpy()
+
+infection_matrix = np.reshape(infection_np, (num, 50*5), order='F')
+infection_array = np.zeros(len(range(5, 50*5, 5)))
+
+for i in range(5, (50*5), 5):
+    count = 0
+    for j in range(2000):
+        if infection_matrix[j, i] == 1:
+            count += 1
+
+    infection_array[int(i / 5) - 1] = count
+
+#############################################################################
+
+infection_panda1 = model1.datacollector.get_agent_vars_dataframe()
+infection_np1 = infection_panda1.to_numpy()
+
+infection_matrix1 = np.reshape(infection_np1, (num, 50*8), order='F')
+infection_array1 = np.zeros(len(range(8, 50*8, 8)))
+
+for i in range(8, (50*8), 8):
+    count = 0
+    for j in range(2000):
+        if infection_matrix1[j, i] == 1:
+            count += 1
+
+    infection_array1[int(i / 8) - 1] = count
+
+#############################################################################
+
+infection_panda2 = model2.datacollector.get_agent_vars_dataframe()
+infection_np2 = infection_panda2.to_numpy()
+
+infection_matrix2 = np.reshape(infection_np2, (num, 50*12), order='F')
+infection_array2 = np.zeros(len(range(12, 50*12, 12)))
+
+for i in range(12, (50*12), 12):
+    count = 0
+    for j in range(2000):
+        if infection_matrix2[j, i] == 1:
+            count += 1
+
+    infection_array2[int(i / 12) - 1] = count
+
+#############################################################################
+
+infection_panda3 = model3.datacollector.get_agent_vars_dataframe()
+infection_np3 = infection_panda3.to_numpy()
+
+infection_matrix3 = np.reshape(infection_np3, (num, 50*20), order='F')
+infection_array3 = np.zeros(len(range(20, 50*20, 20)))
+
+for i in range(20, (50*20), 20):
+    count = 0
+    for j in range(2000):
+        if infection_matrix3[j, i] == 1:
+            count += 1
+
+    infection_array3[int(i / 20) - 1] = count
+
+#############################################################################
+
+infection_panda4 = model4.datacollector.get_agent_vars_dataframe()
+infection_np4 = infection_panda4.to_numpy()
+
+infection_matrix4 = np.reshape(infection_np4, (num, 50*30), order='F')
+infection_array4 = np.zeros(len(range(30, 50*30, 30)))
+
+for i in range(30, (50*30), 30):
+    count = 0
+    for j in range(2000):
+        if infection_matrix4[j, i] == 1:
+            count += 1
+
+    infection_array4[int(i / 30) - 1] = count
+
+#############################################################################
 
 plt.rcParams['axes.facecolor'] = 'white'
+fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 
-"""fig, ax = plt.subplots(1, 1, figsize=(10, 5))
-
-ax.plot(np.arange(0, steps), new_out, color='blue', label='city=1')
-ax.plot(np.arange(0, steps1), new_out1, color='red', label='city=2')
-ax.set_xlabel('Steps')
+ax.plot(np.arange(0, 49), infection_array, color='blue', label='steps=5')
+ax.plot(np.arange(0, 49), infection_array1, color='red', label='steps=8')
+ax.plot(np.arange(0, 49), infection_array2, color='green', label='steps=12')
+ax.plot(np.arange(0, 49), infection_array3, color='orange', label='steps=20')
+ax.plot(np.arange(0, 49), infection_array4, color='pink', label='steps=30')
+ax.set_xlabel('Days')
 ax.set_ylabel('No. of People Infected')
 ax.legend()
 ax.grid(linestyle='--')
-secax = ax.secondary_xaxis(-0.15, functions=(lambda x: x/8, lambda x: x/8))
-secax.set_xlabel('Days')
 
 plt.tight_layout()
-plt.show()  """
-
-fig, ax = plt.subplots(figsize=(10, 5))
-
-par1 = ax.twinx()
-
-ax.set_xlabel("Steps")
-ax.set_ylabel("No. People Infected")
-par1.set_ylabel("Mobility %")
-
-p3, = par1.plot(np.arange(0, len(spread_average_uk)), spread_average_uk, color='blue', label="Mobility %")
-p1, = ax.plot(np.arange(0, len(spread_average_uk)), new_out, color='red', label="Mobility Data")
-p2, = ax.plot(np.arange(0, len(spread_average_uk)), new_out1, color='green', label="No Mobility Data")
-
-ax.legend(handles=[p1, p2], loc='best')
-
-par1.yaxis.label.set_color('blue')
-ax.grid(linestyle='--')
-
-secax = ax.secondary_xaxis(-0.15, functions=(lambda x: x/8, lambda x: x/8))
-secax.set_xlabel('Days')
-
-fig.tight_layout()
-plt.show()
+plt.show()  # """
 
 print(datetime.datetime.now() - begin_time)
 

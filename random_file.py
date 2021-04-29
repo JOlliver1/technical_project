@@ -3,4 +3,5 @@ import matplotlib.pyplot as plt
 import random
 import math
 
-print(random.uniform(0, 1))
+for i in range(7, 99, 7):
+    print(i)
