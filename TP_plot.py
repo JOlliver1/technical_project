@@ -372,7 +372,7 @@ for day_step in range(steps):
     model.step()
     #infected_plotter(model, day_step)
     print(day_step, datetime.datetime.now() - begin_time)
-    if day_step == 100:
+    if day_step == 800:
         steps = day_step+1
         break
 
@@ -384,7 +384,7 @@ model1 = DiseaseModel(no_people=67000000,
                       all_x=all_x,
                       all_y=all_y,
                       centers=centers,
-                      infection_rate=0.8,
+                      infection_rate=0.1,
                       city_label=city_label)
 
 print('model1 init')
@@ -394,7 +394,7 @@ for day_step in range(steps1):
     model1.step()
     #infected_plotter(model, day_step)
     print(day_step, datetime.datetime.now() - begin_time)
-    if day_step == 100:
+    if day_step == 800:
         steps1 = day_step+1
         break
 
@@ -406,7 +406,7 @@ model2 = DiseaseModel(no_people=67000000,
                       all_x=all_x,
                       all_y=all_y,
                       centers=centers,
-                      infection_rate=0.6,
+                      infection_rate=0.05,
                       city_label=city_label)
 
 print('model2 init')
@@ -416,7 +416,7 @@ for day_step in range(steps2):
     model2.step()
     #infected_plotter(model, day_step)
     print(day_step, datetime.datetime.now() - begin_time)
-    if day_step == 100:
+    if day_step == 800:
         steps2 = day_step+1
         break
 
@@ -428,7 +428,7 @@ model3 = DiseaseModel(no_people=67000000,
                       all_x=all_x,
                       all_y=all_y,
                       centers=centers,
-                      infection_rate=0.4,
+                      infection_rate=0.01,
                       city_label=city_label)
 
 print('model3 init')
@@ -438,7 +438,7 @@ for day_step in range(steps3):
     model3.step()
     #infected_plotter(model, day_step)
     print(day_step, datetime.datetime.now() - begin_time)
-    if day_step == 100:
+    if day_step == 800:
         steps3 = day_step+1
         break
 
@@ -450,7 +450,7 @@ model4 = DiseaseModel(no_people=67000000,
                       all_x=all_x,
                       all_y=all_y,
                       centers=centers,
-                      infection_rate=0.2,
+                      infection_rate=0.005,
                       city_label=city_label)
 
 print('model4 init')
@@ -460,7 +460,7 @@ for day_step in range(steps4):
     model4.step()
     #infected_plotter(model, day_step)
     print(day_step, datetime.datetime.now() - begin_time)
-    if day_step == 100:
+    if day_step == 800:
         steps4 = day_step+1
         break
 
@@ -485,12 +485,12 @@ plt.rcParams['axes.facecolor'] = 'white'
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 
 ax.plot(np.arange(0, steps), new_out, color='blue', label='infection rate=1')
-ax.plot(np.arange(0, steps1), new_out1, color='red', label='infection rate=0.8')
-ax.plot(np.arange(0, steps2), new_out2, color='green', label='infection rate=0.6')
-ax.plot(np.arange(0, steps3), new_out3, color='orange', label='infection rate=0.4')
-ax.plot(np.arange(0, steps4), new_out4, color='pink', label='infection rate=0.2')
+ax.plot(np.arange(0, steps1), new_out1, color='red', label='infection rate=0.1')
+ax.plot(np.arange(0, steps2), new_out2, color='green', label='infection rate=0.05')
+ax.plot(np.arange(0, steps3), new_out3, color='orange', label='infection rate=0.01')
+ax.plot(np.arange(0, steps4), new_out4, color='pink', label='infection rate=0.005')
 ax.set_xlabel('Steps')
-ax.set_ylabel('No. of People Infected')
+ax.set_ylabel('No. People Infected')
 ax.legend()
 ax.grid(linestyle='--')
 secax = ax.secondary_xaxis(-0.15, functions=(lambda x: x/8, lambda x: x/8))

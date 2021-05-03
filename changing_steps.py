@@ -448,15 +448,15 @@ infection_panda = model.datacollector.get_agent_vars_dataframe()
 infection_np = infection_panda.to_numpy()
 
 infection_matrix = np.reshape(infection_np, (num, 50*5), order='F')
-infection_array = np.zeros(len(range(5, 50*5, 5)))
+infection_array = np.zeros(len(range(0, (50*5)-5, 5)))
 
-for i in range(5, (50*5), 5):
+for i in range(0, (50*5)-5, 5):
     count = 0
     for j in range(2000):
         if infection_matrix[j, i] == 1:
             count += 1
 
-    infection_array[int(i / 5) - 1] = count
+    infection_array[int(i / 5)] = count
 
 #############################################################################
 
@@ -464,15 +464,15 @@ infection_panda1 = model1.datacollector.get_agent_vars_dataframe()
 infection_np1 = infection_panda1.to_numpy()
 
 infection_matrix1 = np.reshape(infection_np1, (num, 50*8), order='F')
-infection_array1 = np.zeros(len(range(8, 50*8, 8)))
+infection_array1 = np.zeros(len(range(0, (50*8)-8, 8)))
 
-for i in range(8, (50*8), 8):
+for i in range(0, (50*8)-8, 8):
     count = 0
     for j in range(2000):
         if infection_matrix1[j, i] == 1:
             count += 1
 
-    infection_array1[int(i / 8) - 1] = count
+    infection_array1[int(i / 8)] = count
 
 #############################################################################
 
@@ -480,15 +480,15 @@ infection_panda2 = model2.datacollector.get_agent_vars_dataframe()
 infection_np2 = infection_panda2.to_numpy()
 
 infection_matrix2 = np.reshape(infection_np2, (num, 50*12), order='F')
-infection_array2 = np.zeros(len(range(12, 50*12, 12)))
+infection_array2 = np.zeros(len(range(0, (50*12)-12, 12)))
 
-for i in range(12, (50*12), 12):
+for i in range(0, (50*12)-12, 12):
     count = 0
     for j in range(2000):
         if infection_matrix2[j, i] == 1:
             count += 1
 
-    infection_array2[int(i / 12) - 1] = count
+    infection_array2[int(i / 12)] = count
 
 #############################################################################
 
@@ -496,15 +496,15 @@ infection_panda3 = model3.datacollector.get_agent_vars_dataframe()
 infection_np3 = infection_panda3.to_numpy()
 
 infection_matrix3 = np.reshape(infection_np3, (num, 50*20), order='F')
-infection_array3 = np.zeros(len(range(20, 50*20, 20)))
+infection_array3 = np.zeros(len(range(0, (50*20)-20, 20)))
 
-for i in range(20, (50*20), 20):
+for i in range(0, (50*20)-20, 20):
     count = 0
     for j in range(2000):
         if infection_matrix3[j, i] == 1:
             count += 1
 
-    infection_array3[int(i / 20) - 1] = count
+    infection_array3[int(i / 20)] = count
 
 #############################################################################
 
@@ -512,15 +512,15 @@ infection_panda4 = model4.datacollector.get_agent_vars_dataframe()
 infection_np4 = infection_panda4.to_numpy()
 
 infection_matrix4 = np.reshape(infection_np4, (num, 50*30), order='F')
-infection_array4 = np.zeros(len(range(30, 50*30, 30)))
+infection_array4 = np.zeros(len(range(0, (50*30)-30, 30)))
 
-for i in range(30, (50*30), 30):
+for i in range(0, (50*30)-30, 30):
     count = 0
     for j in range(2000):
         if infection_matrix4[j, i] == 1:
             count += 1
 
-    infection_array4[int(i / 30) - 1] = count
+    infection_array4[int(i / 30)] = count
 
 #############################################################################
 
@@ -536,6 +536,50 @@ ax.set_xlabel('Days')
 ax.set_ylabel('No. of People Infected')
 ax.legend()
 ax.grid(linestyle='--')
+
+plt.tight_layout()
+plt.show()  # """
+
+#############################################################################
+
+out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out = out.to_numpy()
+
+#############################################################################
+
+out1 = model1.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out1 = out1.to_numpy()
+
+#############################################################################
+
+out2 = model2.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out2 = out2.to_numpy()
+
+#############################################################################
+
+out3 = model3.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out3 = out3.to_numpy()
+
+#############################################################################
+
+out4 = model4.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out4 = out4.to_numpy()
+
+#############################################################################
+
+fig1, ax1 = plt.subplots(1, 1, figsize=(10, 5))
+
+ax1.plot(np.arange(0, len(new_out)), new_out, color='blue', label='steps=5')
+ax1.plot(np.arange(0, len(new_out1)), new_out1, color='red', label='isteps=8')
+ax1.plot(np.arange(0, len(new_out2)), new_out2, color='green', label='steps=12')
+ax1.plot(np.arange(0, len(new_out3)), new_out3, color='orange', label='steps=20')
+ax1.plot(np.arange(0, len(new_out4)), new_out4, color='pink', label='steps=30')
+ax1.set_xlabel('Steps')
+ax1.set_ylabel('No. People Infected')
+ax1.legend()
+ax1.grid(linestyle='--')
+#secax = ax.secondary_xaxis(-0.15, functions=(lambda x: x/8, lambda x: x/8))
+#secax.set_xlabel('Days')
 
 plt.tight_layout()
 plt.show()  # """

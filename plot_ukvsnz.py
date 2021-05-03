@@ -128,7 +128,7 @@ def infected_plotter(model, day):
 
 
 class Agent(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store):
+    def __init__(self, unique_id, model, infection_rate, work_store, home_store, mobility):
         super().__init__(unique_id, model)
         self.infected = 0
         self.working = 0
@@ -136,6 +136,8 @@ class Agent(Agent):
         self.infection = infection_rate
         self.work_store = work_store
         self.home_store = home_store
+        self.mobility = mobility
+        #print(self.home_store)
 
     def spread_disease(self):
         if self.infected == 0:
@@ -144,12 +146,18 @@ class Agent(Agent):
         else:
             cellmates = self.model.grid.get_cell_list_contents([self.pos])
             for a in cellmates:
-                if a.infected != 1 and random.uniform(0, 1) < self.infection:
+                if a.infected != 1 and random.uniform(0, 1) < self.infection:# and random.uniform(0, 1) < \
+                        #spread_average_uk[day_step] / 100:
                     a.infected = 1
                     self.rnumber += 1
 
     def move(self):
-        if random.uniform(0, 1) < spread_average_uk[day_step] / 100:
+        if self.mobility == "UK":
+            spread_average = spread_average_uk
+        else:
+            spread_average = spread_average_nz
+
+        if random.uniform(0, 1) < spread_average[day_step] / 100:
             if (day_step % 8) - 2 == 0:
                 if self.work_store[self.unique_id, 0] != 0:
                     new_position = (tuple(self.work_store[self.unique_id, :]))
@@ -180,58 +188,6 @@ class Agent(Agent):
         self.spread_disease()
 
 
-class Agent1(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store):
-        super().__init__(unique_id, model, infection_rate, work_store, home_store)
-        self.infected = 0
-        self.working = 0
-        self.rnumber = 0
-        self.infection = infection_rate
-        self.work_store = work_store
-        self.home_store = home_store
-
-    def spread_disease(self):
-        if self.infected == 0:
-            return
-
-        else:
-            cellmates = self.model.grid.get_cell_list_contents([self.pos])
-            for a in cellmates:
-                if a.infected != 1 and random.uniform(0, 1) < self.infection:
-                    a.infected = 1
-                    self.rnumber += 1
-
-    def move(self):
-        if (day_step % 8) - 2 == 0:
-            if self.work_store[self.unique_id, 0] != 0:
-                new_position = (tuple(self.work_store[self.unique_id, :]))
-                self.model.grid.move_agent(self, new_position)
-                self.working = 1
-
-        if (day_step % 8) - 6 == 0:
-            if self.work_store[self.unique_id, 0] != 0:
-                new_position = (tuple(self.home_store[self.unique_id, :]))
-                self.model.grid.move_agent(self, new_position)
-                self.working = 0
-        else:
-            possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
-            while True:
-                if self.working == 0:
-                    new_position = self.random.choice(possible_steps)
-                    if find_dist(new_position, self.home_store[self.unique_id, :]) <= 5:
-                        self.model.grid.move_agent(self, new_position)
-                        break
-                elif self.working == 1:
-                    new_position = self.random.choice(possible_steps)
-                    if find_dist(new_position, self.work_store[self.unique_id, :]) <= 5:
-                        self.model.grid.move_agent(self, new_position)
-                        break
-
-    def step(self):
-        self.move()
-        self.spread_disease()
-
-
 def compute_informed(model):
     return sum([1 for a in model.schedule.agents if a.infected == 1])
 
@@ -247,76 +203,70 @@ def rnumber_calc(model):
     return sum_rnumber/count
 
 
-def agent_locator(city_to_country, no_people, total_area, city_to_country_area, countryside, no_agents):
-    num_agents = no_agents
-    grid_size = round(math.sqrt((num_agents / no_people) * total_area) * 100)
-
-    centers = np.zeros((1, 2))
-    centers[0, :] = random.randrange(10, grid_size - 10), random.randrange(10, grid_size - 10)
-    x = np.zeros((1, round(int(city_to_country * num_agents))))
-    y = np.zeros((1, round(int(city_to_country * num_agents))))
-    x[0, :] = np.around(np.random.normal(centers[0, 0], 3, round(int(city_to_country * num_agents))))
-    y[0, :] = np.around(np.random.normal(centers[0, 1], 3, round(int(city_to_country * num_agents))))
-
-    count = 0
-    countryside_count = 0
-    while countryside_count < (countryside * num_agents):
-        countryside_count += counter(x)
-        runner = True
-        while runner:
-            new_center = (random.randrange(10, grid_size - 10), random.randrange(10, grid_size - 10))
-            if dist_check(new_center, centers):
-                centers = np.vstack((centers, new_center))
-                runner = False
-
-        new_x = np.around(
-            np.random.normal(centers[count, 0], (1 / (6 * city_to_country_area * (math.sqrt(count + 1))))
-                             * grid_size, round(int(city_to_country * num_agents)
-                                                      / (count + 2))))
-        new_y = np.around(
-            np.random.normal(centers[count, 1], (1 / (6 * city_to_country_area * (math.sqrt(count + 1))))
-                             * grid_size, round(int(city_to_country * num_agents)
-                                                       / (count + 2))))
-        while len(new_x) < round(int(city_to_country * num_agents)):
-            new_x = np.append(new_x, -1)
-            new_y = np.append(new_y, -1)
-
-        x = np.vstack((x, new_x))
-        y = np.vstack((y, new_y))
-        count += 1
-
-    city_label = np.zeros(no_people)
-
-    label = city_labeler(x)
-    for i in range(len(label)):
-        city_label[i] = label[i]
-
-    new_x = np.delete(x.flatten(), np.where(x.flatten() == -1))
-    new_y = np.delete(y.flatten(), np.where(y.flatten() == -1))
-
-    x_countryside = np.around(np.random.uniform(0, grid_size - 1, int(num_agents - len(new_x))))
-    y_countryside = np.around(np.random.uniform(0, grid_size - 1, int(num_agents - len(new_y))))
-
-    all_x = np.concatenate((new_x, x_countryside))
-    all_y = np.concatenate((new_y, y_countryside))
-
-    return all_x, all_y, centers, city_label
-
-
 class DiseaseModel(Model):
-    def __init__(self, no_people, total_area, no_agents, Nc_N, n, all_x, all_y, centers, infection_rate, city_label,
-                 first_infected, mobility_data):
+    def __init__(self, city_to_country, no_people, total_area, city_to_country_area, countryside, no_agents, Nc_N, n,
+                 infection_rate, mobility):
         self.num_agents = no_agents
         grid_size = round(math.sqrt((self.num_agents / no_people) * total_area) * 100)
         self.grid = MultiGrid(grid_size, grid_size, False)
         self.schedule = RandomActivation(self)
         self.running = True
 
-        flux_store = np.zeros((1, 3))
+        centers = np.zeros((1, 2))
+        centers[0, :] = random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10)
+        x = np.zeros((1, round(int(city_to_country * self.num_agents))))
+        y = np.zeros((1, round(int(city_to_country * self.num_agents))))
+        x[0, :] = np.around(np.random.normal(centers[0, 0], 3, round(int(city_to_country * self.num_agents))))
+        y[0, :] = np.around(np.random.normal(centers[0, 1], 3, round(int(city_to_country * self.num_agents))))
+
         home_store1 = np.zeros((self.num_agents, 2))
+
+        count = 0
+        countryside_count = 0
+        while countryside_count < (countryside * self.num_agents):
+            countryside_count += counter(x)
+            runner = True
+            while runner:
+                new_center = (random.randrange(10, self.grid.width - 10), random.randrange(10, self.grid.height - 10))
+                if dist_check(new_center, centers):
+                    centers = np.vstack((centers, new_center))
+                    runner = False
+
+            new_x = np.around(
+                np.random.normal(centers[count, 0], (1 / (6 * city_to_country_area * (math.sqrt(count + 1))))
+                                 * self.grid.width, round(int(city_to_country * self.num_agents)
+                                                          / (count + 2))))
+            new_y = np.around(
+                np.random.normal(centers[count, 1], (1 / (6 * city_to_country_area * (math.sqrt(count + 1))))
+                                 * self.grid.height, round(int(city_to_country * self.num_agents)
+                                                           / (count + 2))))
+            while len(new_x) < round(int(city_to_country * self.num_agents)):
+                new_x = np.append(new_x, -1)
+                new_y = np.append(new_y, -1)
+
+            x = np.vstack((x, new_x))
+            y = np.vstack((y, new_y))
+            count += 1
+
+        city_label = np.zeros(no_people)
+        label = city_labeler(x)
+        for i in range(len(label)):
+            city_label[i] = label[i]
+
+        new_x = np.delete(x.flatten(), np.where(x.flatten() == -1))
+        new_y = np.delete(y.flatten(), np.where(y.flatten() == -1))
+
+        x_countryside = np.around(np.random.uniform(0, self.grid.width - 1, int(self.num_agents - len(new_x))))
+        y_countryside = np.around(np.random.uniform(0, self.grid.height - 1, int(self.num_agents - len(new_y))))
+
+        all_x = np.concatenate((new_x, x_countryside))
+        all_y = np.concatenate((new_y, y_countryside))
+
+        flux_store = np.zeros((1, 3))
 
         for i in range(round(len(centers) / 2)):
             print(i, datetime.datetime.now() - begin_time)
+            #print(len(centers))
             n_cities = random.sample(range(1, round(len(centers) / 2)), n)
 
             for j in range(len(n_cities)):
@@ -365,24 +315,22 @@ class DiseaseModel(Model):
         for i in range(self.num_agents):
             home_store1[i, :] = int(all_x[i]), int(all_y[i])
 
+        #global work_store, home_store
         work_store = np.int64(work_store1)
         home_store = np.int64(home_store1)
 
         for i in range(self.num_agents):
-            if mobility_data:
-                a = Agent(i, self, infection_rate, work_store, home_store)
-                self.schedule.add(a)
-                self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
-            else:
-                a = Agent1(i, self, infection_rate, work_store, home_store)
-                self.schedule.add(a)
-                self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
+            a = Agent(i, self, infection_rate, work_store, home_store, mobility)
+            self.schedule.add(a)
+            self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
+            home_store1[i, :] = int(all_x[i]), int(all_y[i])
 
-            if i == first_infected:
+            if i == 1:
                 a.infected = 1
+                #a.working = 1
 
         self.datacollector = DataCollector(
-            model_reporters={"Tot infections": compute_informed},
+            model_reporters={"Tot informed": compute_informed},
             agent_reporters={"Infected": "infected", "R-Number": "rnumber"})
 
     def step(self):
@@ -391,52 +339,40 @@ class DiseaseModel(Model):
 
 
 num = 2000
-city_to_country = 0.14
-no_people = 67000000
-total_area = 240000
-city_to_country_area = 13
-countryside = 0.8
+infection_rate = 0.01
 
-all_x, all_y, centers, city_label = agent_locator(city_to_country,
-                                                  no_people,
-                                                  total_area,
-                                                  city_to_country_area,
-                                                  countryside,
-                                                  num)
+#############################################################################
 
-
-model = DiseaseModel(no_people=67000000,
+model = DiseaseModel(city_to_country=0.14,
+                     no_people=67000000,
                      total_area=240000,
+                     city_to_country_area=13,
+                     countryside=0.8,
                      no_agents=num,
                      Nc_N=0.2,
-                     n=50,
-                     all_x=all_x,
-                     all_y=all_y,
-                     centers=centers,
-                     infection_rate=0.05,
-                     city_label=city_label,
-                     first_infected=1,
-                     mobility_data=True)
+                     n=2,
+                     infection_rate=infection_rate,
+                     mobility="UK")
 
 print('model init')
 
 steps = len(spread_average_uk)
 for day_step in range(steps):
-    model.step()
     print(day_step, datetime.datetime.now() - begin_time)
+    model.step()
 
-model1 = DiseaseModel(no_people=67000000,
-                      total_area=240000,
+#############################################################################
+
+model1 = DiseaseModel(city_to_country=0.14,
+                      no_people=5000000,
+                      total_area=260000,
+                      city_to_country_area=16,
+                      countryside=0.8,
                       no_agents=num,
-                      Nc_N=0.2,
-                      n=50,
-                      all_x=all_x,
-                      all_y=all_y,
-                      centers=centers,
-                      infection_rate=0.1,
-                      city_label=city_label,
-                      first_infected=1,
-                      mobility_data=False)
+                      Nc_N=0.1,
+                      n=2,
+                      infection_rate=infection_rate,
+                      mobility="Nz")
 
 print('model1 init')
 
@@ -445,12 +381,14 @@ for day_step in range(steps1):
     model1.step()
     print(day_step, datetime.datetime.now() - begin_time)
 
+#############################################################################
+
 out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out = out.to_numpy()[:, 0]
-rnumber_panda = model.datacollector.get_agent_vars_dataframe()
-rnumber_np = rnumber_panda.to_numpy()
+daily_panda = model.datacollector.get_agent_vars_dataframe()
+daily_np = daily_panda.to_numpy()
 
-rnumber_matrix = np.reshape(rnumber_np[:, 1], (num, len(spread_average_uk)), order='F')
+rnumber_matrix = np.reshape(daily_np[:, 1], (num, len(spread_average_uk)), order='F')
 rnumber_array = np.zeros(len(range(8, len(spread_average_uk), 8)))
 
 for i in range(8, len(spread_average_uk), 8):
@@ -466,12 +404,29 @@ for i in range(8, len(spread_average_uk), 8):
     else:
         rnumber_array[int(i / 8)-1] = 0
 
+daily_matrix = np.reshape(daily_np[:, 0], (num, len(spread_average_uk)), order='F')
+daily_array = np.zeros(len(range(0, len(spread_average_uk), 8)))
+
+for i in range(0, len(spread_average_uk), 8):
+    count = 0
+    for j in range(2000):
+        if daily_matrix[j, i] == 1:
+            count += 1
+
+    daily_array[int(i / 8)] = count
+
+infected_bar = []
+for i in range(len(daily_array)-1):
+    infected_bar.append(daily_array[i+1]-daily_array[i])
+
+#############################################################################
+
 out1 = model1.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out1 = out1.to_numpy()[:, 0]
-rnumber_panda1 = model1.datacollector.get_agent_vars_dataframe()
-rnumber_np1 = rnumber_panda1.to_numpy()
+daily_panda1 = model1.datacollector.get_agent_vars_dataframe()
+daily_np1 = daily_panda1.to_numpy()
 
-rnumber_matrix1 = np.reshape(rnumber_np1[:, 1], (num, len(spread_average_uk)), order='F')
+rnumber_matrix1 = np.reshape(daily_np1[:, 1], (num, len(spread_average_uk)), order='F')
 rnumber_array1 = np.zeros(len(range(8, len(spread_average_uk), 8)))
 
 for i in range(8, len(spread_average_uk), 8):
@@ -487,53 +442,109 @@ for i in range(8, len(spread_average_uk), 8):
     else:
         rnumber_array1[int(i / 8)-1] = 0
 
+daily_matrix1 = np.reshape(daily_np1[:, 0], (num, len(spread_average_uk)), order='F')
+daily_array1 = np.zeros(len(range(0, len(spread_average_uk), 8)))
+
+for i in range(8, len(spread_average_uk), 8):
+    count = 0
+    for j in range(2000):
+        if daily_matrix1[j, i] == 1:
+            count += 1
+
+    daily_array1[int(i / 8)] = count
+
+infected_bar1 = []
+for i in range(len(daily_array1)-1):
+    infected_bar1.append(daily_array1[i+1]-daily_array1[i])
+
+#############################################################################
+
+colour_plotter(model)
+colour_plotter(model1)
+
+#############################################################################
+
+ratio = np.max(infected_bar1)/np.max(infected_bar)
+
 plt.rcParams['axes.facecolor'] = 'white'
 
-plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array, color='red', label='Mobility Data')
-plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array1, color='green', label='No Mobility Data')
+fig1, ax1 = plt.subplots(2, 1, figsize=(10, 5), gridspec_kw={'height_ratios': [1, ratio]})
+ax1[0].bar(np.arange(0, (len(infected_bar))), infected_bar, color='red', label='UK', width=1.0)
+#ax1[0].set_xlabel('Days')
+ax1[0].set_ylabel('Daily Number of Infections')
+ax1[0].legend()
+#ax1[0].axes.get_xaxis().set_visible(False)
+
+ax1[1].bar(np.arange(0, (len(infected_bar1))), infected_bar1, color='green', label='New Zealand', width=1.0)
+ax1[1].set_xlabel('Days')
+ax1[1].set_ylabel('Daily Number of Infections')
+ax1[1].legend()
+
+plt.tight_layout()
+plt.show()
+
+#############################################################################
+
+plt.figure(figsize=(10, 5))
+plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array, color='red', label='UK')
+plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array1, color='green', label='New Zealand')
 plt.xlabel('Days')
 plt.ylabel('Average R Number')
 plt.grid(linestyle='--')
 plt.legend()
 plt.show()
 
+#############################################################################
 
-"""fig, ax = plt.subplots(1, 1, figsize=(10, 5))
-
-ax.plot(np.arange(0, steps), new_out, color='blue', label='city=1')
-ax.plot(np.arange(0, steps1), new_out1, color='red', label='city=2')
-ax.set_xlabel('Steps')
-ax.set_ylabel('No. of People Infected')
-ax.legend()
-ax.grid(linestyle='--')
-secax = ax.secondary_xaxis(-0.15, functions=(lambda x: x/8, lambda x: x/8))
-secax.set_xlabel('Days')
-
-plt.tight_layout()
-plt.show()  """
-#"""
 fig, ax = plt.subplots(figsize=(10, 5))
 
-par1 = ax.twinx()
+#par1 = ax.twinx()
 
 ax.set_xlabel("Steps")
 ax.set_ylabel("No. People Infected")
-par1.set_ylabel("Mobility %")
+#par1.set_ylabel("Mobility %")
 
-p3, = par1.plot(np.arange(0, len(spread_average_uk)), spread_average_uk, color='blue', label="Mobility %")
-p1, = ax.plot(np.arange(0, len(new_out)), new_out, color='red', label="Mobility Data")
-p2, = ax.plot(np.arange(0, len(new_out)), new_out1, color='green', label="No Mobility Data")
+#p3, = par1.plot(np.arange(0, len(spread_average_uk)), spread_average_uk, color='blue', label="Mobility %")
+p1, = ax.plot(np.arange(0, len(new_out)), new_out, color='red', label="UK")
+p2, = ax.plot(np.arange(0, len(new_out)), new_out1, color='green', label="New Zealand")
 
-ax.legend(handles=[p1, p2], loc='best')
+ax.legend(handles=[p1, p2], loc='lower right')
 
-par1.yaxis.label.set_color('blue')
+#par1.yaxis.label.set_color('blue')
 ax.grid(linestyle='--')
 
 secax = ax.secondary_xaxis(-0.15, functions=(lambda x: x/8, lambda x: x/8))
 secax.set_xlabel('Days')
 
 fig.tight_layout()
-plt.show()#"""
+plt.show()
+
+#############################################################################
+
+fig2, ax2 = plt.subplots(figsize=(10, 5))
+
+#par1 = ax.twinx()
+
+ax2.set_xlabel("Steps")
+ax2.set_ylabel("No. People Infected / Population")
+#par1.set_ylabel("Mobility %")
+
+#p3, = par1.plot(np.arange(0, len(spread_average_uk)), spread_average_uk, color='blue', label="Mobility %")
+p1, = ax2.plot(np.arange(0, len(new_out)), new_out/67000000, color='red', label="UK")
+p2, = ax2.plot(np.arange(0, len(new_out)), new_out1/5000000, color='green', label="New Zealand")
+
+ax2.legend(handles=[p1, p2], loc='lower right')
+
+#par1.yaxis.label.set_color('blue')
+ax2.grid(linestyle='--')
+
+secax = ax2.secondary_xaxis(-0.15, functions=(lambda x: x/8, lambda x: x/8))
+secax.set_xlabel('Days')
+
+fig2.tight_layout()
+plt.show()
+
+#############################################################################
 
 print(datetime.datetime.now() - begin_time)
 
