@@ -128,7 +128,7 @@ def infected_plotter(model, day):
 
 
 class Agent(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store):
+    def __init__(self, unique_id, model, infection_rate, work_store, home_store, mobility):
         super().__init__(unique_id, model)
         self.infected = 0
         self.working = 0
@@ -136,6 +136,7 @@ class Agent(Agent):
         self.infection = infection_rate
         self.work_store = work_store
         self.home_store = home_store
+        self.mobility = mobility
 
     def spread_disease(self):
         if self.infected == 0:
@@ -144,12 +145,17 @@ class Agent(Agent):
         else:
             cellmates = self.model.grid.get_cell_list_contents([self.pos])
             for a in cellmates:
-                if a.infected != 1 and random.uniform(0, 1) < self.infection*(spread_average_uk[day_step]/100):
+                if a.infected != 1 and random.uniform(0, 1) < self.infection:
                     a.infected = 1
                     self.rnumber += 1
 
     def move(self):
-        if random.uniform(0, 1) < spread_average_uk[day_step]/100:
+        if self.mobility:
+            spread = spread_average_uk
+        else:
+            spread = len(spread_average_uk)*[1]
+
+        if random.uniform(0, 1) < spread[day_step]:
             if (day_step % 8) - 2 == 0:
                 if self.work_store[self.unique_id, 0] != 0:
                     new_position = (tuple(self.work_store[self.unique_id, :]))
@@ -180,58 +186,6 @@ class Agent(Agent):
         self.spread_disease()
 
 
-class Agent1(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store):
-        super().__init__(unique_id, model, infection_rate, work_store, home_store)
-        self.infected = 0
-        self.working = 0
-        self.rnumber = 0
-        self.infection = infection_rate
-        self.work_store = work_store
-        self.home_store = home_store
-
-    def spread_disease(self):
-        if self.infected == 0:
-            return
-
-        else:
-            cellmates = self.model.grid.get_cell_list_contents([self.pos])
-            for a in cellmates:
-                if a.infected != 1 and random.uniform(0, 1) < self.infection:
-                    a.infected = 1
-                    self.rnumber += 1
-
-    def move(self):
-        if (day_step % 8) - 2 == 0:
-            if self.work_store[self.unique_id, 0] != 0:
-                new_position = (tuple(self.work_store[self.unique_id, :]))
-                self.model.grid.move_agent(self, new_position)
-                self.working = 1
-
-        if (day_step % 8) - 6 == 0:
-            if self.work_store[self.unique_id, 0] != 0:
-                new_position = (tuple(self.home_store[self.unique_id, :]))
-                self.model.grid.move_agent(self, new_position)
-                self.working = 0
-        else:
-            possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
-            while True:
-                if self.working == 0:
-                    new_position = self.random.choice(possible_steps)
-                    if find_dist(new_position, self.home_store[self.unique_id, :]) <= 5:
-                        self.model.grid.move_agent(self, new_position)
-                        break
-                elif self.working == 1:
-                    new_position = self.random.choice(possible_steps)
-                    if find_dist(new_position, self.work_store[self.unique_id, :]) <= 5:
-                        self.model.grid.move_agent(self, new_position)
-                        break
-
-    def step(self):
-        self.move()
-        self.spread_disease()
-
-
 def compute_informed(model):
     return sum([1 for a in model.schedule.agents if a.infected == 1])
 
@@ -247,7 +201,7 @@ def rnumber_calc(model):
     return sum_rnumber/count
 
 
-def agent_locator(city_to_country, no_people, total_area, city_to_country_area, countryside, no_agents):
+def agent_locator(city_to_country, no_people, total_area, city_to_country_area, countryside, no_agents, n, Nc_N):
     num_agents = no_agents
     grid_size = round(math.sqrt((num_agents / no_people) * total_area) * 100)
 
@@ -300,83 +254,81 @@ def agent_locator(city_to_country, no_people, total_area, city_to_country_area, 
     all_x = np.concatenate((new_x, x_countryside))
     all_y = np.concatenate((new_y, y_countryside))
 
-    return all_x, all_y, centers, city_label
+    all_x[1] = centers[0, 0]
+    all_y[1] = centers[0, 1]
+
+    flux_store = np.zeros((1, 3))
+    home_store1 = np.zeros((num_agents, 2))
+
+    for i in range(round(len(centers) / 2)):
+        print(i, datetime.datetime.now() - begin_time)
+        n_cities = random.sample(range(1, round(len(centers) / 2)), n)
+
+        for j in range(len(n_cities)):
+            mi = np.count_nonzero(city_label == i + 1)
+            nj = np.count_nonzero(city_label == n_cities[j])
+            radius = math.sqrt((centers[i, 0] - centers[n_cities[j], 0]) ** 2 +
+                               (centers[i, 1] - centers[n_cities[j], 1]) ** 2)
+            sij = 0
+
+            for k in range(len(all_x)):
+                if (all_x[k] - centers[i, 0]) ** 2 + (all_y[k] - centers[i, 1]) ** 2 < radius ** 2:
+                    sij += 1
+
+            sij = sij - mi - nj
+            if sij < 0:
+                sij = 0
+
+            try:
+                Tij = (mi * Nc_N * mi * nj) / ((mi + sij) * (mi + nj + sij)) * 10
+            except ZeroDivisionError:
+                Tij = 0
+
+            if Tij > 75:
+                Tij = 75
+
+            if Tij > 1 and (i != n_cities[j]):
+                flux_store = np.vstack((flux_store, (Tij, i + 1, n_cities[j])))
+
+    work_place = np.zeros(num_agents)
+    work_store1 = np.zeros((num, 2))
+    flux_store = np.delete(flux_store, 0, 0)
+
+    for i in np.unique(flux_store[:, 1]):
+        place = np.where(flux_store[:, 1] == i)[0]
+        place1 = np.where(city_label == i)[0]
+        for j in place1:
+            for k in place:
+                if random.uniform(0, 100) < flux_store[k, 0]:
+                    work_place[j] = flux_store[k, 2]
+
+    for i in range(len(work_store1)):
+        if work_place[i] != 0:
+            n = int(work_place[i])
+            work_store1[i, :] = centers[n, 0], centers[n, 1]
+
+    for i in range(num_agents):
+        home_store1[i, :] = int(all_x[i]), int(all_y[i])
+
+    work_store = np.int64(work_store1)
+    home_store = np.int64(home_store1)
+
+    return all_x, all_y, centers, city_label, work_store, home_store
 
 
 class DiseaseModel(Model):
-    def __init__(self, no_people, total_area, no_agents, Nc_N, n, all_x, all_y, centers, infection_rate, city_label,
-                 first_infected, mobility_data):
+    def __init__(self, no_people, total_area, no_agents, all_x, all_y, infection_rate, first_infected, mobility,
+                 work_store, home_store):
         self.num_agents = no_agents
         grid_size = round(math.sqrt((self.num_agents / no_people) * total_area) * 100)
         self.grid = MultiGrid(grid_size, grid_size, False)
         self.schedule = RandomActivation(self)
         self.running = True
 
-        flux_store = np.zeros((1, 3))
-        home_store1 = np.zeros((self.num_agents, 2))
-
-        for i in range(round(len(centers) / 2)):
-            print(i, datetime.datetime.now() - begin_time)
-            n_cities = random.sample(range(1, round(len(centers) / 2)), n)
-
-            for j in range(len(n_cities)):
-                mi = np.count_nonzero(city_label == i+1)
-                nj = np.count_nonzero(city_label == n_cities[j])
-                radius = math.sqrt((centers[i, 0] - centers[n_cities[j], 0]) ** 2 +
-                                   (centers[i, 1] - centers[n_cities[j], 1]) ** 2)
-                sij = 0
-
-                for k in range(len(all_x)):
-                    if (all_x[k] - centers[i, 0]) ** 2 + (all_y[k] - centers[i, 1]) ** 2 < radius ** 2:
-                        sij += 1
-
-                sij = sij - mi - nj
-                if sij < 0:
-                    sij = 0
-
-                try:
-                    Tij = (mi * Nc_N * mi * nj) / ((mi + sij) * (mi + nj + sij))*10
-                except ZeroDivisionError:
-                    Tij = 0
-
-                if Tij > 75:
-                    Tij = 75
-
-                if Tij > 1 and (i != n_cities[j]):
-                    flux_store = np.vstack((flux_store, (Tij, i+1, n_cities[j])))
-
-        work_place = np.zeros(self.num_agents)
-        work_store1 = np.zeros((num, 2))
-        flux_store = np.delete(flux_store, 0, 0)
-
-        for i in np.unique(flux_store[:, 1]):
-            place = np.where(flux_store[:, 1] == i)[0]
-            place1 = np.where(city_label == i)[0]
-            for j in place1:
-                for k in place:
-                    if random.uniform(0, 100) < flux_store[k, 0]:
-                        work_place[j] = flux_store[k, 2]
-
-        for i in range(len(work_store1)):
-            if work_place[i] != 0:
-                n = int(work_place[i])
-                work_store1[i, :] = centers[n, 0], centers[n, 1]
-
         for i in range(self.num_agents):
-            home_store1[i, :] = int(all_x[i]), int(all_y[i])
-
-        work_store = np.int64(work_store1)
-        home_store = np.int64(home_store1)
-
-        for i in range(self.num_agents):
-            if mobility_data:
-                a = Agent(i, self, infection_rate, work_store, home_store)
-                self.schedule.add(a)
-                self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
-            else:
-                a = Agent1(i, self, infection_rate, work_store, home_store)
-                self.schedule.add(a)
-                self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
+            a = Agent(i, self, infection_rate, work_store, home_store, mobility)
+            self.schedule.add(a)
+            self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
 
             if i == first_infected:
                 a.infected = 1
@@ -391,62 +343,62 @@ class DiseaseModel(Model):
 
 
 num = 2000
+n = 50
+Nc_N = 0.2
 city_to_country = 0.14
 no_people = 67000000
 total_area = 240000
 city_to_country_area = 13
 countryside = 0.8
 
-all_x, all_y, centers, city_label = agent_locator(city_to_country,
-                                                  no_people,
-                                                  total_area,
-                                                  city_to_country_area,
-                                                  countryside,
-                                                  num)
+all_x, all_y, centers, city_label, work_store, home_store = agent_locator(city_to_country,
+                                                                          no_people,
+                                                                          total_area,
+                                                                          city_to_country_area,
+                                                                          countryside,
+                                                                          num,
+                                                                          n,
+                                                                          Nc_N)
 
 #############################################################################
 
 model = DiseaseModel(no_people=67000000,
                      total_area=240000,
                      no_agents=num,
-                     Nc_N=0.2,
-                     n=50,
                      all_x=all_x,
                      all_y=all_y,
-                     centers=centers,
                      infection_rate=0.01,
-                     city_label=city_label,
                      first_infected=1,
-                     mobility_data=True)
+                     mobility=True,
+                     work_store=work_store,
+                     home_store=home_store)
 
 print('model init')
 
 steps = len(spread_average_uk)
 for day_step in range(steps):
     model.step()
-    print(day_step, datetime.datetime.now() - begin_time)
+    #print(day_step, datetime.datetime.now() - begin_time)
 
 #############################################################################
 
 model1 = DiseaseModel(no_people=67000000,
                       total_area=240000,
                       no_agents=num,
-                      Nc_N=0.2,
-                      n=50,
                       all_x=all_x,
                       all_y=all_y,
-                      centers=centers,
                       infection_rate=0.01,
-                      city_label=city_label,
                       first_infected=1,
-                      mobility_data=False)
+                      mobility=False,
+                      work_store=work_store,
+                      home_store=home_store)
 
 print('model1 init')
 
 steps1 = len(spread_average_uk)
 for day_step in range(steps1):
     model1.step()
-    print(day_step, datetime.datetime.now() - begin_time)
+    #print(day_step, datetime.datetime.now() - begin_time)
 
 #############################################################################
 

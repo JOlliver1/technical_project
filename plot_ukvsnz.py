@@ -338,7 +338,7 @@ class DiseaseModel(Model):
         self.schedule.step()
 
 
-num = 2000
+num = 10000
 infection_rate = 0.01
 
 #############################################################################
@@ -350,7 +350,7 @@ model = DiseaseModel(city_to_country=0.14,
                      countryside=0.8,
                      no_agents=num,
                      Nc_N=0.2,
-                     n=2,
+                     n=50,
                      infection_rate=infection_rate,
                      mobility="UK")
 
@@ -370,7 +370,7 @@ model1 = DiseaseModel(city_to_country=0.14,
                       countryside=0.8,
                       no_agents=num,
                       Nc_N=0.1,
-                      n=2,
+                      n=50,
                       infection_rate=infection_rate,
                       mobility="Nz")
 
@@ -394,7 +394,7 @@ rnumber_array = np.zeros(len(range(8, len(spread_average_uk), 8)))
 for i in range(8, len(spread_average_uk), 8):
     count = 0
     count2 = 0
-    for j in range(2000):
+    for j in range(num):
         if rnumber_matrix[j, i] != 0:
             count += 1
             count2 += (rnumber_matrix[j, i] - rnumber_matrix[j, 0])
@@ -409,7 +409,7 @@ daily_array = np.zeros(len(range(0, len(spread_average_uk), 8)))
 
 for i in range(0, len(spread_average_uk), 8):
     count = 0
-    for j in range(2000):
+    for j in range(num):
         if daily_matrix[j, i] == 1:
             count += 1
 
@@ -432,7 +432,7 @@ rnumber_array1 = np.zeros(len(range(8, len(spread_average_uk), 8)))
 for i in range(8, len(spread_average_uk), 8):
     count = 0
     count2 = 0
-    for j in range(2000):
+    for j in range(num):
         if rnumber_matrix1[j, i] != 0:
             count += 1
             count2 += (rnumber_matrix1[j, i] - rnumber_matrix1[j, 0])
@@ -447,7 +447,7 @@ daily_array1 = np.zeros(len(range(0, len(spread_average_uk), 8)))
 
 for i in range(8, len(spread_average_uk), 8):
     count = 0
-    for j in range(2000):
+    for j in range(num):
         if daily_matrix1[j, i] == 1:
             count += 1
 

@@ -128,7 +128,7 @@ def infected_plotter(model, day):
 
 
 class Agent(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store):
+    def __init__(self, unique_id, model, infection_rate, work_store, home_store, mobility_data):
         super().__init__(unique_id, model)
         self.infected = 0
         self.working = 0
@@ -136,20 +136,34 @@ class Agent(Agent):
         self.infection = infection_rate
         self.work_store = work_store
         self.home_store = home_store
+        self.mobility_data = mobility_data
 
     def spread_disease(self):
+        if self.mobility_data == 0:
+            spread = spread_average_uk
+        elif self.mobility_data == 1:
+            spread = spread_average_uk1
+        else:
+            spread = spread_average_uk2
+
         if self.infected == 0:
             return
-
         else:
             cellmates = self.model.grid.get_cell_list_contents([self.pos])
             for a in cellmates:
-                if a.infected != 1 and random.uniform(0, 1) < self.infection*(spread_average_uk[day_step]/100):
+                if a.infected != 1 and random.uniform(0, 1) < (self.infection*(spread[day_step]/100)):
                     a.infected = 1
                     self.rnumber += 1
 
     def move(self):
-        if random.uniform(0, 1) < spread_average_uk[day_step]/100:
+        if self.mobility_data == 0:
+            spread = spread_average_uk
+        elif self.mobility_data == 1:
+            spread = spread_average_uk1
+        else:
+            spread = spread_average_uk2
+
+        if random.uniform(0, 1) < spread[day_step] / 100:
             if (day_step % 8) - 2 == 0:
                 if self.work_store[self.unique_id, 0] != 0:
                     new_position = (tuple(self.work_store[self.unique_id, :]))
@@ -174,58 +188,6 @@ class Agent(Agent):
                         if find_dist(new_position, self.work_store[self.unique_id, :]) <= 5:
                             self.model.grid.move_agent(self, new_position)
                             break
-
-    def step(self):
-        self.move()
-        self.spread_disease()
-
-
-class Agent1(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store):
-        super().__init__(unique_id, model, infection_rate, work_store, home_store)
-        self.infected = 0
-        self.working = 0
-        self.rnumber = 0
-        self.infection = infection_rate
-        self.work_store = work_store
-        self.home_store = home_store
-
-    def spread_disease(self):
-        if self.infected == 0:
-            return
-
-        else:
-            cellmates = self.model.grid.get_cell_list_contents([self.pos])
-            for a in cellmates:
-                if a.infected != 1 and random.uniform(0, 1) < self.infection:
-                    a.infected = 1
-                    self.rnumber += 1
-
-    def move(self):
-        if (day_step % 8) - 2 == 0:
-            if self.work_store[self.unique_id, 0] != 0:
-                new_position = (tuple(self.work_store[self.unique_id, :]))
-                self.model.grid.move_agent(self, new_position)
-                self.working = 1
-
-        if (day_step % 8) - 6 == 0:
-            if self.work_store[self.unique_id, 0] != 0:
-                new_position = (tuple(self.home_store[self.unique_id, :]))
-                self.model.grid.move_agent(self, new_position)
-                self.working = 0
-        else:
-            possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
-            while True:
-                if self.working == 0:
-                    new_position = self.random.choice(possible_steps)
-                    if find_dist(new_position, self.home_store[self.unique_id, :]) <= 5:
-                        self.model.grid.move_agent(self, new_position)
-                        break
-                elif self.working == 1:
-                    new_position = self.random.choice(possible_steps)
-                    if find_dist(new_position, self.work_store[self.unique_id, :]) <= 5:
-                        self.model.grid.move_agent(self, new_position)
-                        break
 
     def step(self):
         self.move()
@@ -369,14 +331,10 @@ class DiseaseModel(Model):
         home_store = np.int64(home_store1)
 
         for i in range(self.num_agents):
-            if mobility_data:
-                a = Agent(i, self, infection_rate, work_store, home_store)
-                self.schedule.add(a)
-                self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
-            else:
-                a = Agent1(i, self, infection_rate, work_store, home_store)
-                self.schedule.add(a)
-                self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
+            a = Agent(i, self, infection_rate, work_store, home_store, mobility_data)
+            self.schedule.add(a)
+            self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
+
 
             if i == first_infected:
                 a.infected = 1
@@ -417,7 +375,7 @@ model = DiseaseModel(no_people=67000000,
                      infection_rate=0.01,
                      city_label=city_label,
                      first_infected=1,
-                     mobility_data=True)
+                     mobility_data=0)
 
 print('model init')
 
@@ -439,13 +397,35 @@ model1 = DiseaseModel(no_people=67000000,
                       infection_rate=0.01,
                       city_label=city_label,
                       first_infected=1,
-                      mobility_data=False)
+                      mobility_data=1)
 
 print('model1 init')
 
-steps1 = len(spread_average_uk)
+steps1 = len(spread_average_uk1)
 for day_step in range(steps1):
     model1.step()
+    print(day_step, datetime.datetime.now() - begin_time)
+
+#############################################################################
+
+model2 = DiseaseModel(no_people=67000000,
+                      total_area=240000,
+                      no_agents=num,
+                      Nc_N=0.2,
+                      n=50,
+                      all_x=all_x,
+                      all_y=all_y,
+                      centers=centers,
+                      infection_rate=0.01,
+                      city_label=city_label,
+                      first_infected=1,
+                      mobility_data='hello')
+
+print('model2 init')
+
+steps2 = len(spread_average_uk2)
+for day_step in range(steps2):
+    model2.step()
     print(day_step, datetime.datetime.now() - begin_time)
 
 #############################################################################
@@ -509,8 +489,8 @@ for i in range(8, len(spread_average_uk), 8):
     else:
         rnumber_array1[int(i / 8)-1] = 0
 
-daily_matrix1 = np.reshape(daily_np1[:, 0], (num, len(spread_average_uk)), order='F')
-daily_array1 = np.zeros(len(range(0, len(spread_average_uk), 8)))
+daily_matrix1 = np.reshape(daily_np1[:, 0], (num, len(spread_average_uk1)), order='F')
+daily_array1 = np.zeros(len(range(0, len(spread_average_uk1), 8)))
 
 for i in range(8, len(spread_average_uk), 8):
     count = 0
@@ -526,21 +506,63 @@ for i in range(len(daily_array1)-1):
 
 #############################################################################
 
-ratio = np.max(infected_bar1)/np.max(infected_bar)
+out2 = model2.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out2 = out2.to_numpy()[:, 0]
+daily_panda2 = model2.datacollector.get_agent_vars_dataframe()
+daily_np2 = daily_panda2.to_numpy()
+
+rnumber_matrix2 = np.reshape(daily_np2[:, 1], (num, len(spread_average_uk2)), order='F')
+rnumber_array2 = np.zeros(len(range(8, len(spread_average_uk2), 8)))
+
+for i in range(8, len(spread_average_uk2), 8):
+    count = 0
+    count2 = 0
+    for j in range(2000):
+        if rnumber_matrix2[j, i] != 0:
+            count += 1
+            count2 += (rnumber_matrix2[j, i] - rnumber_matrix2[j, 0])
+
+    if count != 0:
+        rnumber_array2[int(i / 8)-1] = count2 / count
+    else:
+        rnumber_array2[int(i / 8)-1] = 0
+
+daily_matrix2 = np.reshape(daily_np2[:, 0], (num, len(spread_average_uk2)), order='F')
+daily_array2 = np.zeros(len(range(0, len(spread_average_uk2), 8)))
+
+for i in range(8, len(spread_average_uk2), 8):
+    count = 0
+    for j in range(2000):
+        if daily_matrix2[j, i] == 1:
+            count += 1
+
+    daily_array2[int(i / 8)] = count
+
+infected_bar2 = []
+for i in range(len(daily_array2)-1):
+    infected_bar2.append(daily_array2[i+1]-daily_array2[i])
+
+
+#############################################################################
+
+#ratio = np.max(infected_bar1)/np.max(infected_bar)
+#ratio1 = np.max(infected_bar2)/np.max(infected_bar)
 
 plt.rcParams['axes.facecolor'] = 'white'
 
-fig1, ax1 = plt.subplots(2, 1, figsize=(10, 5), gridspec_kw={'height_ratios': [1, ratio]})
-ax1[0].bar(np.arange(0, (len(infected_bar))), infected_bar, color='red', label='Mobility Data', width=1.0)
-#ax1[0].set_xlabel('Days')
+fig1, ax1 = plt.subplots(3, 1, figsize=(10, 5))#, gridspec_kw={'height_ratios': [1, ratio, ratio1]})
+ax1[0].bar(np.arange(0, (len(infected_bar))), infected_bar, color='red', label='Real Mobility Data', width=1.0)
 ax1[0].set_ylabel('Daily Number of Infections')
 ax1[0].legend()
-#ax1[0].axes.get_xaxis().set_visible(False)
 
-ax1[1].bar(np.arange(0, (len(infected_bar1))), infected_bar1, color='green', label='No Mobility Data', width=1.0)
-ax1[1].set_xlabel('Days')
+ax1[1].bar(np.arange(0, (len(infected_bar1))), infected_bar1, color='green', label='Week Before', width=1.0)
 ax1[1].set_ylabel('Daily Number of Infections')
 ax1[1].legend()
+
+ax1[2].bar(np.arange(0, (len(infected_bar2))), infected_bar2, color='blue', label='Week After', width=1.0)
+ax1[2].set_xlabel('Days')
+ax1[2].set_ylabel('Daily Number of Infections')
+ax1[2].legend()
 
 plt.tight_layout()
 plt.show()
@@ -549,7 +571,8 @@ plt.show()
 
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array, color='red', label='Mobility Data')
-plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array1, color='green', label='No Mobility Data')
+plt.plot(np.arange(1, (len(rnumber_array1))+1), rnumber_array1, color='green', label='Week Before')
+plt.plot(np.arange(1, (len(rnumber_array2))+1), rnumber_array2, color='blue', label='Week After')
 plt.xlabel('Days')
 plt.ylabel('Average R Number')
 plt.grid(linestyle='--')
@@ -567,10 +590,13 @@ ax.set_ylabel("No. People Infected")
 par1.set_ylabel("Mobility %")
 
 p3, = par1.plot(np.arange(0, len(spread_average_uk)), spread_average_uk, color='blue', label="Mobility %")
-p1, = ax.plot(np.arange(0, len(new_out)), new_out, color='red', label="Mobility Data")
-p2, = ax.plot(np.arange(0, len(new_out)), new_out1, color='green', label="No Mobility Data")
+p4, = par1.plot(np.arange(0, len(spread_average_uk1)), spread_average_uk1, ':', color='dimgrey', label="Mobility %")
+p5, = par1.plot(np.arange(0, len(spread_average_uk2)), spread_average_uk2, ':', color='dimgrey', label="Mobility %")
+p1, = ax.plot(np.arange(0, len(new_out)), new_out, color='red', label="Real Mobility")
+p2, = ax.plot(np.arange(0, len(new_out1)), new_out1, color='green', label="Earlier Shift")
+p3, = ax.plot(np.arange(0, len(new_out2)), new_out2, color='tab:orange', label="Later Shift")
 
-ax.legend(handles=[p1, p2], loc='lower right')
+ax.legend(handles=[p1, p2, p3], loc='lower right')
 
 par1.yaxis.label.set_color('blue')
 ax.grid(linestyle='--')

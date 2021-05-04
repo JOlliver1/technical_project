@@ -38,6 +38,7 @@ average_nz = average_nz[:-11]
 
 #print(len(average_uk))
 spread_average_uk = np.zeros(len(average_uk)*8)
+spread_average = spread_average_uk
 spread_average_nz = np.zeros(len(average_nz)*8)
 
 for i in range(len(average_uk)):
@@ -47,6 +48,13 @@ for i in range(len(average_uk)):
 
 spread_average_uk = spread_average_uk[304:1448]  # 891
 spread_average_nz = spread_average_nz[304:1448]
+spread_average_uk2 = spread_average[192:1336]
+spread_average_uk1 = spread_average[416:1560]
+
+#plt.plot(0, len(spread_average_uk), spread_average_uk, color='b')
+#plt.plot(0, len(spread_average_uk), spread_average_uk1, color='r')
+#plt.plot(0, len(spread_average_uk), spread_average_uk2, color='g')
+#plt.show()
 
 """plt.figure(figsize=(10, 5))
 plt.plot(np.arange(0, len(spread_average_uk)), 100*np.ones(len(spread_average_uk)), color='black', label='Baseline')

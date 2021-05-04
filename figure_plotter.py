@@ -10,7 +10,7 @@ import random
 import math
 import datetime
 
-from import_apple_data import average
+#from import_apple_data import average
 
 begin_time = datetime.datetime.now()
 
@@ -161,7 +161,7 @@ class Agent(Agent):
                     a.infected = 1
 
     def move(self):
-        if random.uniform(0, 1) < average[day]/100:
+        if random.uniform(0, 1) < 1:
             possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
             new_position = self.random.choice(possible_steps)
             self.model.grid.move_agent(self, new_position)
@@ -249,7 +249,7 @@ model = DiseaseModel(city_to_country=0.28,
                      city_to_country_area=16,
                      countryside=0.8)
 
-model1 = DiseaseModel(city_to_country=0.14, no_people=67000000, total_area=240000, city_to_country_area=13,
+model1 = DiseaseModel(city_to_country=0.28, no_people=67000000, total_area=240000, city_to_country_area=13,
                       countryside=0.8)
 
 colour_plotter2(model, model1)
