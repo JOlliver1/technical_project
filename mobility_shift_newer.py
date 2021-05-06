@@ -144,11 +144,11 @@ class Agent(Agent):
 
     def spread_disease(self):
         if self.mobility == 0:
-            spread = np.minimum(spread_average_uk, 100)
+            spread = np.minimum(spreaduk, 100)
         elif self.mobility == 1:
-            spread = np.minimum(spread_average_uk1, 100)
+            spread = np.minimum(spreaduk1, 100)
         else:
-            spread = np.minimum(spread_average_uk2, 100)
+            spread = np.minimum(spreaduk2, 100)
 
         if self.infected == 0:
             return
@@ -162,11 +162,11 @@ class Agent(Agent):
 
     def move(self):
         if self.mobility == 0:
-            spread = np.minimum(spread_average_uk, 100)
+            spread = np.minimum(spreaduk, 100)
         elif self.mobility == 1:
-            spread = np.minimum(spread_average_uk1, 100)
+            spread = np.minimum(spreaduk1, 100)
         else:
-            spread = np.minimum(spread_average_uk2, 100)
+            spread = np.minimum(spreaduk2, 100)
 
         if random.uniform(0, 1) < spread[day_step]/100:
             if (day_step % 8) - 2 == 0:
@@ -388,7 +388,7 @@ model = DiseaseModel(no_people=67000000,
 
 print('model init')
 
-steps = len(spread_average_uk)
+steps = len(spreaduk)
 for day_step in range(steps):
     model.step()
     #print(day_step, datetime.datetime.now() - begin_time)
@@ -408,7 +408,7 @@ model1 = DiseaseModel(no_people=67000000,
 
 print('model1 init')
 
-steps1 = len(spread_average_uk1)
+steps1 = len(spreaduk1)
 for day_step in range(steps1):
     model1.step()
     #print(day_step, datetime.datetime.now() - begin_time)
@@ -428,7 +428,7 @@ model2 = DiseaseModel(no_people=67000000,
 
 print('model2 init')
 
-steps2 = len(spread_average_uk2)
+steps2 = len(spreaduk2)
 for day_step in range(steps2):
     model2.step()
 
@@ -457,14 +457,14 @@ ax.set_xlabel("Steps")
 ax.set_ylabel("No. People Infected")
 par1.set_ylabel("Mobility %")
 
-p6, = par1.plot(np.arange(0, len(spread_average_uk)), spread1, color='blue', label="Mobility %")
-p4, = par1.plot(np.arange(0, len(spread_average_uk1)), spread2, ':', color='dimgrey', label="Mobility %")
-p5, = par1.plot(np.arange(0, len(spread_average_uk2)), spread3, ':', color='dimgrey', label="Mobility %")
+p6, = par1.plot(np.arange(0, len(spreaduk)), spreaduk, color='blue', label="Mobility %")
+p4, = par1.plot(np.arange(0, len(spreaduk1)), spreaduk1, ':', color='dimgrey', label="Mobility %")
+p5, = par1.plot(np.arange(0, len(spreaduk2)), spreaduk2, ':', color='dimgrey', label="Mobility %")
 p1, = ax.plot(np.arange(0, len(new_out)), new_out, color='red', label="Real Mobility")
 p2, = ax.plot(np.arange(0, len(new_out1)), new_out1, color='green', label="Earlier Shift")
 p3, = ax.plot(np.arange(0, len(new_out2)), new_out2, color='tab:orange', label="Later Shift")
 
-ax.legend(handles=[p1, p2, p3], loc='lower right')
+ax.legend(handles=[p1, p2, p3], loc='center right')
 
 par1.yaxis.label.set_color('blue')
 ax.grid(linestyle='--')

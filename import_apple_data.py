@@ -47,17 +47,39 @@ for i in range(len(average_uk)):
         spread_average_nz[(i*8)+j] = average_nz[i]
 
 spread_average_uk = spread_average_uk[304:1448]#:1448]  # 891
-spread_average_nz = spread_average_nz[304:1448]
-spread_average_uk2 = spread_average[192:1336]
-spread_average_uk1 = spread_average[416:1560]
+spread_average_nz = spread_average_nz[304:1448]  #
+spread_average_uk2 = spread_average[192:1336]  #
+spread_average_uk1 = spread_average[416:1560]  # later shift
 
 split_average_uk1 = spread_average_uk[:208]
 split_average_uk2 = spread_average_uk[208:]
 
-#plt.plot(0, len(spread_average_uk), spread_average_uk, color='b')
-#plt.plot(0, len(spread_average_uk), spread_average_uk1, color='r')
-#plt.plot(0, len(spread_average_uk), spread_average_uk2, color='g')
-#plt.show()
+spreaduk2 = np.zeros(len(spread_average_uk2))
+spreaduk1 = np.zeros(len(spread_average_uk1))
+spreaduk = np.zeros(len(spread_average_uk))
+
+for i in range(len(spreaduk2)):
+    if i > 422:
+        spreaduk2[i] = 20
+    else:
+        spreaduk2[i] = spread_average_uk2[i]
+
+for i in range(len(spreaduk1)):
+    if i > 198:
+        spreaduk1[i] = 20
+    else:
+        spreaduk1[i] = spread_average_uk1[i]
+
+for i in range(len(spreaduk)):
+    if i > 310:
+        spreaduk[i] = 20
+    else:
+        spreaduk[i] = spread_average_uk[i]
+
+# plt.plot(0, len(spread_average_uk), spreaduk, color='b')
+# plt.plot(0, len(spread_average_uk1), spreaduk1, color='r')
+# plt.plot(0, len(spread_average_uk2), spreaduk2, color='g')
+# plt.show()
 
 """plt.figure(figsize=(10, 5))
 plt.plot(np.arange(0, len(spread_average_uk)), 100*np.ones(len(spread_average_uk)), color='black', label='Baseline')
