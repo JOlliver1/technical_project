@@ -153,7 +153,7 @@ class Agent(Agent):
             cellmates = self.model.grid.get_cell_list_contents([self.pos])
             if self.masked == 1:
                 for a in cellmates:
-                    if a.infected != 1 and random.uniform(0, 1) < self.infection*self.mask_effect:
+                    if a.infected != 1 and random.uniform(0, 1) < self.infection*(1-self.mask_effect):
                         a.infected = 1
                         self.rnumber += 1
             else:

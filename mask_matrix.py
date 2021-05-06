@@ -133,7 +133,7 @@ def infected_plotter(model, day):
 
 
 class Agent(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store, mobility, mask_effect, stepper):
+    def __init__(self, unique_id, model, infection_rate, work_store, home_store, mobility, mask_effect):
         super().__init__(unique_id, model)
         self.infected = 0
         self.working = 0
@@ -143,7 +143,6 @@ class Agent(Agent):
         self.work_store = work_store
         self.home_store = home_store
         self.mobility = mobility
-        self.stepper = stepper
         self.mask_effect = mask_effect
 
     def spread_disease(self):
@@ -154,7 +153,7 @@ class Agent(Agent):
             cellmates = self.model.grid.get_cell_list_contents([self.pos])
             if self.masked == 1:
                 for a in cellmates:
-                    if a.infected != 1 and random.uniform(0, 1) < self.infection*self.mask_effect:
+                    if a.infected != 1 and random.uniform(0, 1) < self.infection*(1-self.mask_effect):
                         a.infected = 1
                         self.rnumber += 1
             else:
@@ -165,13 +164,13 @@ class Agent(Agent):
 
     def move(self):
         if random.uniform(0, 1) < self.mobility:
-            if (self.stepper % 8) - 2 == 0:
+            if (day_step % 8) - 2 == 0:
                 if self.work_store[self.unique_id, 0] != 0:
                     new_position = (tuple(self.work_store[self.unique_id, :]))
                     self.model.grid.move_agent(self, new_position)
                     self.working = 1
 
-            elif (self.stepper % 8) - 6 == 0:
+            elif (day_step % 8) - 6 == 0:
                 if self.work_store[self.unique_id, 0] != 0:
                     new_position = (tuple(self.home_store[self.unique_id, :]))
                     self.model.grid.move_agent(self, new_position)
@@ -337,7 +336,7 @@ class DiseaseModel(Model):
         self.stepper = 0
 
         for i in range(self.num_agents):
-            a = Agent(i, self, infection_rate, work_store, home_store, mobility, mask_effect, self.stepper)
+            a = Agent(i, self, infection_rate, work_store, home_store, mobility, mask_effect)
             self.schedule.add(a)
             self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
 
@@ -354,7 +353,6 @@ class DiseaseModel(Model):
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
-        self.stepper += 1
         #print(self.stepper)
 
 

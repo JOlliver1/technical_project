@@ -153,7 +153,7 @@ class Agent(Agent):
             cellmates = self.model.grid.get_cell_list_contents([self.pos])
             if self.masked == 1:
                 for a in cellmates:
-                    if a.infected != 1 and random.uniform(0, 1) < self.infection*self.mask_effect:
+                    if a.infected != 1 and random.uniform(0, 1) < self.infection*(1-self.mask_effect):
                         a.infected = 1
                         self.rnumber += 1
             else:
@@ -575,17 +575,17 @@ ax.set_ylabel("No. People Infected")
 
 p7, = ax.plot(np.arange(0, len(split_average_uk1)), new_out7, color='black', label="")
 p1, = ax.plot(np.arange(208, len(split_average_uk2)+208), new_out, color='red', label="% people="
-                                                                                                + str(list1[0]))
+                                                                                             + str(int(list1[0]*100)))
 p2, = ax.plot(np.arange(208, len(split_average_uk2)+208), new_out1, color='tab:orange', label="% people="
-                                                                                                + str(list1[1]))
+                                                                                             + str(int(list1[1]*100)))
 p3, = ax.plot(np.arange(208, len(split_average_uk2)+208), new_out2, color='yellow', label="% people="
-                                                                                                + str(list1[2]))
+                                                                                            + str(int(list1[2]*100)))
 p4, = ax.plot(np.arange(208, len(split_average_uk2)+208), new_out3, color='green', label="% people="
-                                                                                                + str(list1[3]))
+                                                                                         + str(int(list1[3] * 100)))
 p5, = ax.plot(np.arange(208, len(split_average_uk2)+208), new_out4, color='blue', label="% people="
-                                                                                                + str(list1[4]))
+                                                                                        + str(int(list1[4] * 100)))
 p6, = ax.plot(np.arange(208, len(split_average_uk2)+208), new_out5, color='purple', label="% people="
-                                                                                                + str(list1[5]))
+                                                                                          + str(int(list1[5] * 100)))
 
 ax.legend(handles=[p1, p2, p3, p4, p5, p6], loc='upper left')
 
