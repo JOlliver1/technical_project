@@ -342,7 +342,7 @@ model = DiseaseModel(no_people=67000000,
                      total_area=240000,
                      no_agents=num,
                      Nc_N=0.2,
-                     n=50,
+                     n=2,
                      all_x=all_x,
                      all_y=all_y,
                      centers=centers,
@@ -372,11 +372,11 @@ for day_step in range(steps):
     model.step()
     #infected_plotter(model, day_step)
     print(day_step, datetime.datetime.now() - begin_time)
-    if day_step == 800:
+    if day_step == 50:
         steps = day_step+1
         break
 
-model1 = DiseaseModel(no_people=67000000,
+"""model1 = DiseaseModel(no_people=67000000,
                       total_area=240000,
                       no_agents=num,
                       Nc_N=0.2,
@@ -464,12 +464,14 @@ for day_step in range(steps4):
         steps4 = day_step+1
         break
 
-#colour_plotter(model)
+#colour_plotter(model)"""
 
-out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+out = model.datacollector.get_agent_vars_dataframe()  # .groupby('Step')#.sum()
 new_out = out.to_numpy()
+end_infection = out.xs(50, level="Step")["Infected"].to_numpy()
+print(end_infection)
 
-out1 = model1.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+"""out1 = model1.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out1 = out1.to_numpy()
 
 out2 = model2.datacollector.get_agent_vars_dataframe().groupby('Step').sum()

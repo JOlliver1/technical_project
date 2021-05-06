@@ -46,10 +46,13 @@ for i in range(len(average_uk)):
         spread_average_uk[(i*8)+j] = average_uk[i]
         spread_average_nz[(i*8)+j] = average_nz[i]
 
-spread_average_uk = spread_average_uk[304:1448]  # 891
+spread_average_uk = spread_average_uk[304:1448]#:1448]  # 891
 spread_average_nz = spread_average_nz[304:1448]
 spread_average_uk2 = spread_average[192:1336]
 spread_average_uk1 = spread_average[416:1560]
+
+split_average_uk1 = spread_average_uk[:208]
+split_average_uk2 = spread_average_uk[208:]
 
 #plt.plot(0, len(spread_average_uk), spread_average_uk, color='b')
 #plt.plot(0, len(spread_average_uk), spread_average_uk1, color='r')

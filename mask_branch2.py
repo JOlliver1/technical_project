@@ -2,6 +2,7 @@ from mesa import Agent, Model
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 from mesa.space import MultiGrid
+from mesa.batchrunner import BatchRunner
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,6 +12,10 @@ import math
 import datetime
 
 from import_apple_data import *
+
+spread1 = spread_average_uk
+spread2 = spread_average_uk1
+spread3 = spread_average_uk2
 
 begin_time = datetime.datetime.now()
 
@@ -128,15 +133,17 @@ def infected_plotter(model, day):
 
 
 class Agent(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store, mobility):
+    def __init__(self, unique_id, model, infection_rate, work_store, home_store, mobility, mask_effect):
         super().__init__(unique_id, model)
         self.infected = 0
         self.working = 0
         self.rnumber = 0
+        self.masked = 0
         self.infection = infection_rate
         self.work_store = work_store
         self.home_store = home_store
         self.mobility = mobility
+        self.mask_effect = mask_effect
 
     def spread_disease(self):
         if self.infected == 0:
@@ -144,18 +151,19 @@ class Agent(Agent):
 
         else:
             cellmates = self.model.grid.get_cell_list_contents([self.pos])
-            for a in cellmates:
-                if a.infected != 1 and random.uniform(0, 1) < self.infection:
-                    a.infected = 1
-                    self.rnumber += 1
+            if self.masked == 1:
+                for a in cellmates:
+                    if a.infected != 1 and random.uniform(0, 1) < self.infection*self.mask_effect:
+                        a.infected = 1
+                        self.rnumber += 1
+            else:
+                for a in cellmates:
+                    if a.infected != 1 and random.uniform(0, 1) < self.infection:
+                        a.infected = 1
+                        self.rnumber += 1
 
     def move(self):
-        if self.mobility:
-            spread = spread_average_uk
-        else:
-            spread = len(spread_average_uk)*[100]
-
-        if random.uniform(0, 1) < spread[day_step]/100:
+        if random.uniform(0, 1) < self.mobility:
             if (day_step % 8) - 2 == 0:
                 if self.work_store[self.unique_id, 0] != 0:
                     new_position = (tuple(self.work_store[self.unique_id, :]))
@@ -318,20 +326,29 @@ def agent_locator(city_to_country, no_people, total_area, city_to_country_area, 
 
 class DiseaseModel(Model):
     def __init__(self, no_people, total_area, no_agents, all_x, all_y, infection_rate, first_infected, mobility,
-                 work_store, home_store):
+                 work_store, home_store, no_mask, mask_effect, phase, infected_position):
         self.num_agents = no_agents
         grid_size = round(math.sqrt((self.num_agents / no_people) * total_area) * 100)
         self.grid = MultiGrid(grid_size, grid_size, False)
         self.schedule = RandomActivation(self)
         self.running = True
 
+        self.stepper = 0
+
         for i in range(self.num_agents):
-            a = Agent(i, self, infection_rate, work_store, home_store, mobility)
+            a = Agent(i, self, infection_rate, work_store, home_store, mobility, mask_effect)
             self.schedule.add(a)
             self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
 
-            if i == first_infected:
-                a.infected = 1
+            if random.uniform(0, 1) < no_mask:
+                a.masked = 1
+
+            if phase:
+                if i == first_infected:
+                    a.infected = 1
+            else:
+                if infected_position[i] == 1:
+                    a.infected = 1
 
         self.datacollector = DataCollector(
             model_reporters={"Tot infections": compute_informed},
@@ -362,169 +379,215 @@ all_x, all_y, centers, city_label, work_store, home_store = agent_locator(city_t
 
 #############################################################################
 
-model = DiseaseModel(no_people=67000000,
+"""model = DiseaseModel(no_people=67000000,
                      total_area=240000,
                      no_agents=num,
                      all_x=all_x,
                      all_y=all_y,
                      infection_rate=0.01,
                      first_infected=1,
-                     mobility=True,
+                     mobility=0,
                      work_store=work_store,
-                     home_store=home_store)
+                     home_store=home_store)"""
 
-print('model init')
-
-steps = len(spread_average_uk)
-for day_step in range(steps):
-    model.step()
-    #print(day_step, datetime.datetime.now() - begin_time)
-
-#############################################################################
-
-model1 = DiseaseModel(no_people=67000000,
+"""model7 = DiseaseModel(no_people=67000000,
                       total_area=240000,
                       no_agents=num,
                       all_x=all_x,
                       all_y=all_y,
                       infection_rate=0.01,
                       first_infected=1,
-                      mobility=False,
+                      no_mask=0,
+                      mask_effect=0,
+                      mobility=1,
                       work_store=work_store,
-                      home_store=home_store)
+                      home_store=home_store,
+                      phase=True,
+                      infected_position=[])
 
-print('model1 init')
+steps7 = len(split_average_uk1)
+for day_step in range(steps7):
+    model7.step()
+
+out7 = model7.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out7 = out7.to_numpy()[:, 0]
+inf_out = model7.datacollector.get_agent_vars_dataframe()
+end_infection = inf_out.xs(steps7-1, level="Step")["Infected"].to_numpy()"""
+
+w = 6
+w1 = 0
+list1 = [0, 0.2, 0.4, 0.6, 0.8, 1]
+
+print(list1[0], datetime.datetime.now() - begin_time)
+model = DiseaseModel(no_people=67000000,
+                         total_area=240000,
+                         no_agents=num,
+                         all_x=all_x,
+                         all_y=all_y,
+                         infection_rate=0.01,
+                         first_infected=1,
+                         no_mask=list1[0],
+                         mask_effect=0.7,
+                         mobility=1,
+                         work_store=work_store,
+                         home_store=home_store,
+                         phase=True,
+                         infected_position=[])
+
+steps = len(spread_average_uk)
+for day_step in range(steps):
+    model.step()
+
+out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out = out.to_numpy()[:, 0]
+
+#############################################################################
+
+print(list1[1], datetime.datetime.now() - begin_time)
+model1 = DiseaseModel(no_people=67000000,
+                         total_area=240000,
+                         no_agents=num,
+                         all_x=all_x,
+                         all_y=all_y,
+                         infection_rate=0.01,
+                         first_infected=1,
+                         no_mask=list1[1],
+                         mask_effect=0.7,
+                         mobility=1,
+                         work_store=work_store,
+                         home_store=home_store,
+                         phase=True,
+                         infected_position=[])
 
 steps1 = len(spread_average_uk)
 for day_step in range(steps1):
     model1.step()
-    #print(day_step, datetime.datetime.now() - begin_time)
-
-#############################################################################
-
-out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
-new_out = out.to_numpy()[:, 0]
-daily_panda = model.datacollector.get_agent_vars_dataframe()
-daily_np = daily_panda.to_numpy()
-
-rnumber_matrix = np.reshape(daily_np[:, 1], (num, len(spread_average_uk)), order='F')
-rnumber_array = np.zeros(len(range(8, len(spread_average_uk), 8)))
-
-for i in range(8, len(spread_average_uk), 8):
-    count = 0
-    count2 = 0
-    for j in range(2000):
-        if rnumber_matrix[j, i] != 0:
-            count += 1
-            count2 += (rnumber_matrix[j, i] - rnumber_matrix[j, 0])
-
-    if count != 0:
-        rnumber_array[int(i / 8)-1] = count2/count
-    else:
-        rnumber_array[int(i / 8)-1] = 0
-
-daily_matrix = np.reshape(daily_np[:, 0], (num, len(spread_average_uk)), order='F')
-daily_array = np.zeros(len(range(0, len(spread_average_uk), 8)))
-
-for i in range(0, len(spread_average_uk), 8):
-    count = 0
-    for j in range(2000):
-        if daily_matrix[j, i] == 1:
-            count += 1
-
-    daily_array[int(i / 8)] = count
-
-infected_bar = []
-for i in range(len(daily_array)-1):
-    infected_bar.append(daily_array[i+1]-daily_array[i])
-
-#############################################################################
 
 out1 = model1.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out1 = out1.to_numpy()[:, 0]
-daily_panda1 = model1.datacollector.get_agent_vars_dataframe()
-daily_np1 = daily_panda1.to_numpy()
-
-rnumber_matrix1 = np.reshape(daily_np1[:, 1], (num, len(spread_average_uk)), order='F')
-rnumber_array1 = np.zeros(len(range(8, len(spread_average_uk), 8)))
-
-for i in range(8, len(spread_average_uk), 8):
-    count = 0
-    count2 = 0
-    for j in range(2000):
-        if rnumber_matrix1[j, i] != 0:
-            count += 1
-            count2 += (rnumber_matrix1[j, i] - rnumber_matrix1[j, 0])
-
-    if count != 0:
-        rnumber_array1[int(i / 8)-1] = count2 / count
-    else:
-        rnumber_array1[int(i / 8)-1] = 0
-
-daily_matrix1 = np.reshape(daily_np1[:, 0], (num, len(spread_average_uk)), order='F')
-daily_array1 = np.zeros(len(range(0, len(spread_average_uk), 8)))
-
-for i in range(8, len(spread_average_uk), 8):
-    count = 0
-    for j in range(2000):
-        if daily_matrix1[j, i] == 1:
-            count += 1
-
-    daily_array1[int(i / 8)] = count
-
-infected_bar1 = []
-for i in range(len(daily_array1)-1):
-    infected_bar1.append(daily_array1[i+1]-daily_array1[i])
 
 #############################################################################
 
-ratio = np.max(infected_bar1)/np.max(infected_bar)
+print(list1[2], datetime.datetime.now() - begin_time)
+model2 = DiseaseModel(no_people=67000000,
+                         total_area=240000,
+                         no_agents=num,
+                         all_x=all_x,
+                         all_y=all_y,
+                         infection_rate=0.01,
+                         first_infected=1,
+                         no_mask=list1[2],
+                         mask_effect=0.7,
+                         mobility=1,
+                         work_store=work_store,
+                         home_store=home_store,
+                         phase=True,
+                         infected_position=[])
 
-plt.rcParams['axes.facecolor'] = 'white'
+steps2 = len(spread_average_uk)
+for day_step in range(steps2):
+    model2.step()
 
-fig1, ax1 = plt.subplots(2, 1, figsize=(10, 5), gridspec_kw={'height_ratios': [1, ratio]})
-ax1[0].bar(np.arange(0, (len(infected_bar))), infected_bar, color='red', label='Mobility Data', width=1.0)
-#ax1[0].set_xlabel('Days')
-ax1[0].set_ylabel('Daily Number of Infections')
-ax1[0].legend()
-#ax1[0].axes.get_xaxis().set_visible(False)
-
-ax1[1].bar(np.arange(0, (len(infected_bar1))), infected_bar1, color='green', label='No Mobility Data', width=1.0)
-ax1[1].set_xlabel('Days')
-ax1[1].set_ylabel('Daily Number of Infections')
-ax1[1].legend()
-
-plt.tight_layout()
-plt.show()
+out2 = model2.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out2 = out2.to_numpy()[:, 0]
 
 #############################################################################
 
-plt.figure(figsize=(10, 5))
-plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array, color='red', label='Mobility Data')
-plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array1, color='green', label='No Mobility Data')
-plt.xlabel('Days')
-plt.ylabel('Average R$_0$ Number')
-plt.grid(linestyle='--')
-plt.legend()
-plt.show()
+print(list1[3], datetime.datetime.now() - begin_time)
+model3 = DiseaseModel(no_people=67000000,
+                         total_area=240000,
+                         no_agents=num,
+                         all_x=all_x,
+                         all_y=all_y,
+                         infection_rate=0.01,
+                         first_infected=1,
+                         no_mask=list1[3],
+                         mask_effect=0.7,
+                         mobility=1,
+                         work_store=work_store,
+                         home_store=home_store,
+                         phase=True,
+                         infected_position=[])
+
+steps3 = len(spread_average_uk)
+for day_step in range(steps3):
+    model3.step()
+
+out3 = model3.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out3 = out3.to_numpy()[:, 0]
+
+#############################################################################
+
+print(list1[4], datetime.datetime.now() - begin_time)
+model4 = DiseaseModel(no_people=67000000,
+                         total_area=240000,
+                         no_agents=num,
+                         all_x=all_x,
+                         all_y=all_y,
+                         infection_rate=0.01,
+                         first_infected=1,
+                         no_mask=list1[4],
+                         mask_effect=0.7,
+                         mobility=1,
+                         work_store=work_store,
+                         home_store=home_store,
+                         phase=True,
+                         infected_position=[])
+
+steps4 = len(spread_average_uk)
+for day_step in range(steps4):
+    model4.step()
+
+out4 = model4.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out4 = out4.to_numpy()[:, 0]
+
+#############################################################################
+
+print(list1[5], datetime.datetime.now() - begin_time)
+model5 = DiseaseModel(no_people=67000000,
+                         total_area=240000,
+                         no_agents=num,
+                         all_x=all_x,
+                         all_y=all_y,
+                         infection_rate=0.01,
+                         first_infected=1,
+                         no_mask=list1[5],
+                         mask_effect=0.7,
+                         mobility=1,
+                         work_store=work_store,
+                         home_store=home_store,
+                         phase=True,
+                         infected_position=[])
+
+steps5 = len(spread_average_uk)
+for day_step in range(steps5):
+    model5.step()
+
+out5 = model5.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
+new_out5 = out5.to_numpy()[:, 0]
 
 #############################################################################
 
 fig, ax = plt.subplots(figsize=(10, 5))
 
-par1 = ax.twinx()
-
 ax.set_xlabel("Steps")
 ax.set_ylabel("No. People Infected")
-par1.set_ylabel("Mobility %")
 
-p3, = par1.plot(np.arange(0, len(spread_average_uk)), spread_average_uk, color='blue', label="Mobility %")
-p1, = ax.plot(np.arange(0, len(new_out)), new_out, color='red', label="Mobility Data")
-p2, = ax.plot(np.arange(0, len(new_out)), new_out1, color='green', label="No Mobility Data")
+p1, = ax.plot(np.arange(0, len(spread_average_uk)), new_out, color='red', label="% people="
+                                                                                            + str(int(list1[0]*100)))
+p2, = ax.plot(np.arange(0, len(spread_average_uk)), new_out1, color='tab:orange', label="% people="
+                                                                                        + str(int(list1[1] * 100)))
+p3, = ax.plot(np.arange(0, len(spread_average_uk)), new_out2, color='yellow', label="% people="
+                                                                                    + str(int(list1[2] * 100)))
+p4, = ax.plot(np.arange(0, len(spread_average_uk)), new_out3, color='green', label="% people="
+                                                                                            + str(int(list1[3]*100)))
+p5, = ax.plot(np.arange(0, len(spread_average_uk)), new_out4, color='blue', label="% people="
+                                                                                  + str(int(list1[4] * 100)))
+p6, = ax.plot(np.arange(0, len(spread_average_uk)), new_out5, color='purple', label="% people="
+                                                                                    + str(int(list1[5] * 100)))
 
-ax.legend(handles=[p1, p2], loc='lower right')
+ax.legend(handles=[p1, p2, p3, p4, p5, p6], loc='upper left')
 
-par1.yaxis.label.set_color('blue')
 ax.grid(linestyle='--')
 
 secax = ax.secondary_xaxis(-0.15, functions=(lambda x: x/8, lambda x: x/8))
@@ -532,8 +595,6 @@ secax.set_xlabel('Days')
 
 fig.tight_layout()
 plt.show()
-
-#############################################################################
 
 print(datetime.datetime.now() - begin_time)
 

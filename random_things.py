@@ -2,6 +2,7 @@ from mesa import Agent, Model
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 from mesa.space import MultiGrid
+from mesa.batchrunner import BatchRunner
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,6 +12,10 @@ import math
 import datetime
 
 from import_apple_data import *
+
+spread1 = spread_average_uk
+spread2 = spread_average_uk1
+spread3 = spread_average_uk2
 
 begin_time = datetime.datetime.now()
 
@@ -128,7 +133,7 @@ def infected_plotter(model, day):
 
 
 class Agent(Agent):
-    def __init__(self, unique_id, model, infection_rate, work_store, home_store, mobility):
+    def __init__(self, unique_id, model, infection_rate, work_store, home_store, mobility, stepper):
         super().__init__(unique_id, model)
         self.infected = 0
         self.working = 0
@@ -137,6 +142,7 @@ class Agent(Agent):
         self.work_store = work_store
         self.home_store = home_store
         self.mobility = mobility
+        self.stepper = stepper
 
     def spread_disease(self):
         if self.infected == 0:
@@ -150,19 +156,14 @@ class Agent(Agent):
                     self.rnumber += 1
 
     def move(self):
-        if self.mobility:
-            spread = spread_average_uk
-        else:
-            spread = len(spread_average_uk)*[100]
-
-        if random.uniform(0, 1) < spread[day_step]/100:
-            if (day_step % 8) - 2 == 0:
+        if random.uniform(0, 1) < self.mobility:
+            if (self.stepper % 8) - 2 == 0:
                 if self.work_store[self.unique_id, 0] != 0:
                     new_position = (tuple(self.work_store[self.unique_id, :]))
                     self.model.grid.move_agent(self, new_position)
                     self.working = 1
 
-            elif (day_step % 8) - 6 == 0:
+            elif (self.stepper % 8) - 6 == 0:
                 if self.work_store[self.unique_id, 0] != 0:
                     new_position = (tuple(self.home_store[self.unique_id, :]))
                     self.model.grid.move_agent(self, new_position)
@@ -325,8 +326,10 @@ class DiseaseModel(Model):
         self.schedule = RandomActivation(self)
         self.running = True
 
+        self.stepper = 0
+
         for i in range(self.num_agents):
-            a = Agent(i, self, infection_rate, work_store, home_store, mobility)
+            a = Agent(i, self, infection_rate, work_store, home_store, mobility, self.stepper)
             self.schedule.add(a)
             self.grid.place_agent(a, (int(all_x[i]), int(all_y[i])))
 
@@ -340,10 +343,12 @@ class DiseaseModel(Model):
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
+        self.stepper += 1
+        #print(self.stepper)
 
 
 num = 2000
-n = 50
+n = 2
 Nc_N = 0.2
 city_to_country = 0.14
 no_people = 67000000
@@ -362,155 +367,85 @@ all_x, all_y, centers, city_label, work_store, home_store = agent_locator(city_t
 
 #############################################################################
 
-model = DiseaseModel(no_people=67000000,
+"""model = DiseaseModel(no_people=67000000,
                      total_area=240000,
                      no_agents=num,
                      all_x=all_x,
                      all_y=all_y,
                      infection_rate=0.01,
                      first_infected=1,
-                     mobility=True,
+                     mobility=0,
                      work_store=work_store,
-                     home_store=home_store)
+                     home_store=home_store)"""
 
-print('model init')
+#infected_total = np.zeros(0)
+w = 11
+w1 = 0
+list1 = [0, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.1, 0.2, 0.3, 0.6, 1]
+
+model = DiseaseModel(no_people=67000000,
+                             total_area=240000,
+                             no_agents=num,
+                             all_x=all_x,
+                             all_y=all_y,
+                             infection_rate=10/10,
+                             first_infected=1,
+                             mobility=list1[10],
+                             work_store=work_store,
+                             home_store=home_store)
 
 steps = len(spread_average_uk)
 for day_step in range(steps):
     model.step()
-    #print(day_step, datetime.datetime.now() - begin_time)
-
-#############################################################################
-
-model1 = DiseaseModel(no_people=67000000,
-                      total_area=240000,
-                      no_agents=num,
-                      all_x=all_x,
-                      all_y=all_y,
-                      infection_rate=0.01,
-                      first_infected=1,
-                      mobility=False,
-                      work_store=work_store,
-                      home_store=home_store)
-
-print('model1 init')
-
-steps1 = len(spread_average_uk)
-for day_step in range(steps1):
-    model1.step()
-    #print(day_step, datetime.datetime.now() - begin_time)
-
-#############################################################################
 
 out = model.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
 new_out = out.to_numpy()[:, 0]
-daily_panda = model.datacollector.get_agent_vars_dataframe()
-daily_np = daily_panda.to_numpy()
 
-rnumber_matrix = np.reshape(daily_np[:, 1], (num, len(spread_average_uk)), order='F')
-rnumber_array = np.zeros(len(range(8, len(spread_average_uk), 8)))
+infected_plotter(model, 40)
 
-for i in range(8, len(spread_average_uk), 8):
-    count = 0
-    count2 = 0
-    for j in range(2000):
-        if rnumber_matrix[j, i] != 0:
-            count += 1
-            count2 += (rnumber_matrix[j, i] - rnumber_matrix[j, 0])
+#infected_total = np.concatenate((infected_total, new_out), axis=None)
 
-    if count != 0:
-        rnumber_array[int(i / 8)-1] = count2/count
-    else:
-        rnumber_array[int(i / 8)-1] = 0
+#infected_total = np.reshape(infected_total, ((w-w1)*(w-w1), len(spread_average_uk)))
+#overall_count = np.zeros((w-w1)*(w-w1))
+#print(infected_total)
 
-daily_matrix = np.reshape(daily_np[:, 0], (num, len(spread_average_uk)), order='F')
-daily_array = np.zeros(len(range(0, len(spread_average_uk), 8)))
+"""for i in range(0, (w-w1)*(w-w1)):
+    countering = 0
+    for j in range(len(spread_average_uk)):
+        if infected_total[i, j] < 300:
+            countering += 1
+    overall_count[i] = countering
 
-for i in range(0, len(spread_average_uk), 8):
-    count = 0
-    for j in range(2000):
-        if daily_matrix[j, i] == 1:
-            count += 1
+overall_count = np.reshape(overall_count, ((w-w1), (w-w1))).astype(int)
+print(overall_count)"""
 
-    daily_array[int(i / 8)] = count
 
-infected_bar = []
-for i in range(len(daily_array)-1):
-    infected_bar.append(daily_array[i+1]-daily_array[i])
+def plot_matrix(matrix):
+    cax = plt.imshow(matrix, cmap=plt.get_cmap('summer'))
+    plt.xticks(np.arange(np.shape(matrix)[0]), labels=np.arange(np.shape(matrix)[0])*10)
+    plt.yticks(np.arange(np.shape(matrix)[0]), labels=np.arange(np.shape(matrix)[0])/10)
+    plt.xlabel('Mobility %')
+    plt.ylabel('Infection Rate')
+    plt.colorbar(cax)
 
-#############################################################################
+    for i in range(np.shape(matrix)[0]):
+        for j in range(np.shape(matrix)[0]):
+            text = plt.text(j, i, round(matrix[i, j], 2), ha="center", va="center")
 
-out1 = model1.datacollector.get_agent_vars_dataframe().groupby('Step').sum()
-new_out1 = out1.to_numpy()[:, 0]
-daily_panda1 = model1.datacollector.get_agent_vars_dataframe()
-daily_np1 = daily_panda1.to_numpy()
+    plt.show()
 
-rnumber_matrix1 = np.reshape(daily_np1[:, 1], (num, len(spread_average_uk)), order='F')
-rnumber_array1 = np.zeros(len(range(8, len(spread_average_uk), 8)))
 
-for i in range(8, len(spread_average_uk), 8):
-    count = 0
-    count2 = 0
-    for j in range(2000):
-        if rnumber_matrix1[j, i] != 0:
-            count += 1
-            count2 += (rnumber_matrix1[j, i] - rnumber_matrix1[j, 0])
-
-    if count != 0:
-        rnumber_array1[int(i / 8)-1] = count2 / count
-    else:
-        rnumber_array1[int(i / 8)-1] = 0
-
-daily_matrix1 = np.reshape(daily_np1[:, 0], (num, len(spread_average_uk)), order='F')
-daily_array1 = np.zeros(len(range(0, len(spread_average_uk), 8)))
-
-for i in range(8, len(spread_average_uk), 8):
-    count = 0
-    for j in range(2000):
-        if daily_matrix1[j, i] == 1:
-            count += 1
-
-    daily_array1[int(i / 8)] = count
-
-infected_bar1 = []
-for i in range(len(daily_array1)-1):
-    infected_bar1.append(daily_array1[i+1]-daily_array1[i])
-
-#############################################################################
-
-ratio = np.max(infected_bar1)/np.max(infected_bar)
-
-plt.rcParams['axes.facecolor'] = 'white'
-
-fig1, ax1 = plt.subplots(2, 1, figsize=(10, 5), gridspec_kw={'height_ratios': [1, ratio]})
-ax1[0].bar(np.arange(0, (len(infected_bar))), infected_bar, color='red', label='Mobility Data', width=1.0)
-#ax1[0].set_xlabel('Days')
-ax1[0].set_ylabel('Daily Number of Infections')
-ax1[0].legend()
-#ax1[0].axes.get_xaxis().set_visible(False)
-
-ax1[1].bar(np.arange(0, (len(infected_bar1))), infected_bar1, color='green', label='No Mobility Data', width=1.0)
-ax1[1].set_xlabel('Days')
-ax1[1].set_ylabel('Daily Number of Infections')
-ax1[1].legend()
-
-plt.tight_layout()
-plt.show()
-
-#############################################################################
-
-plt.figure(figsize=(10, 5))
-plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array, color='red', label='Mobility Data')
-plt.plot(np.arange(1, (len(rnumber_array))+1), rnumber_array1, color='green', label='No Mobility Data')
-plt.xlabel('Days')
-plt.ylabel('Average R$_0$ Number')
-plt.grid(linestyle='--')
+plt.plot(np.arange(0, len(spread_average_uk)), new_out, color='blue', label='infection rate=1')
+plt.xlabel('Steps')
+plt.ylabel('No. People Infected')
 plt.legend()
 plt.show()
 
+#plot_matrix(overall_count)
+
 #############################################################################
 
-fig, ax = plt.subplots(figsize=(10, 5))
+"""fig, ax = plt.subplots(figsize=(10, 5))
 
 par1 = ax.twinx()
 
@@ -518,11 +453,14 @@ ax.set_xlabel("Steps")
 ax.set_ylabel("No. People Infected")
 par1.set_ylabel("Mobility %")
 
-p3, = par1.plot(np.arange(0, len(spread_average_uk)), spread_average_uk, color='blue', label="Mobility %")
-p1, = ax.plot(np.arange(0, len(new_out)), new_out, color='red', label="Mobility Data")
-p2, = ax.plot(np.arange(0, len(new_out)), new_out1, color='green', label="No Mobility Data")
+p6, = par1.plot(np.arange(0, len(spread_average_uk)), spread1, color='blue', label="Mobility %")
+p4, = par1.plot(np.arange(0, len(spread_average_uk1)), spread2, ':', color='dimgrey', label="Mobility %")
+p5, = par1.plot(np.arange(0, len(spread_average_uk2)), spread3, ':', color='dimgrey', label="Mobility %")
+p1, = ax.plot(np.arange(0, len(new_out)), new_out, color='red', label="Real Mobility")
+p2, = ax.plot(np.arange(0, len(new_out1)), new_out1, color='green', label="Earlier Shift")
+p3, = ax.plot(np.arange(0, len(new_out2)), new_out2, color='tab:orange', label="Later Shift")
 
-ax.legend(handles=[p1, p2], loc='lower right')
+ax.legend(handles=[p1, p2, p3], loc='lower right')
 
 par1.yaxis.label.set_color('blue')
 ax.grid(linestyle='--')
@@ -531,7 +469,7 @@ secax = ax.secondary_xaxis(-0.15, functions=(lambda x: x/8, lambda x: x/8))
 secax.set_xlabel('Days')
 
 fig.tight_layout()
-plt.show()
+plt.show()"""
 
 #############################################################################
 

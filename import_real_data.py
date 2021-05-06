@@ -14,13 +14,21 @@ def load_real_data(data_path='/Users/James/Downloads/data_2021-Apr-29.csv'):
 
 data_uk,  dates = load_real_data()
 
-print(dates)
+#print(dates)
 
 data_uk = data_uk[::-1][31:173]
 dates = dates[::-1][31:173]
 average_uk = average_uk[38:181]
 
-fig, ax = plt.subplots(2, 1, figsize=(10, 6))
+data_uk_cum = np.cumsum(data_uk)
+
+spread_data_uk = np.zeros(len(data_uk_cum)*8)
+
+for i in range(len(data_uk_cum)):
+    for j in range(0, 8):
+        spread_data_uk[(i*8)+j] = data_uk_cum[i]
+
+"""fig, ax = plt.subplots(2, 1, figsize=(10, 6))
 
 par = ax[0].twinx()
 
@@ -32,7 +40,7 @@ par.plot(np.arange(0, len(average_uk)), average_uk, color='blue')
 ax[0].set_ylabel('Total Cases')
 ax[1].set_xlabel('Days')
 ax[0].grid(linestyle='--')
-plt.show()
+plt.show()"""
 
 """plt.figure(figsize=(10, 5))
 plt.plot(np.arange(0, len(spread_average_uk)), 100*np.ones(len(spread_average_uk)), color='black', label='Baseline')
